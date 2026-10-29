@@ -1,0 +1,4 @@
+# Page templates are only ever included by section pages; the stylesheet is the one public file.
+<FilesMatch "\.php$">
+    Require all denied
+</FilesMatch>

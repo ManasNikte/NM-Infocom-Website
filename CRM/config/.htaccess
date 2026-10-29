@@ -1,0 +1,8 @@
+# Only the login form handler is a public entry point here.
+Require all denied
+<Files "login.php">
+    Require all granted
+</Files>
+<Files "signup.php">
+    Require all granted
+</Files>

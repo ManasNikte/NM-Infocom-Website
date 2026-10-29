@@ -1,0 +1,2 @@
+# Product catalogue PDFs (inherits the no-execution rules from uploads/.htaccess).
+AddType application/pdf .pdf

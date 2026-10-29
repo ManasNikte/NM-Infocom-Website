@@ -1,0 +1,12 @@
+# Server-only settings and secrets
+.env
+
+# Personal data uploaded through the site (job applications, staff resumes)
+uploads/resume/*
+!uploads/resume/.gitkeep
+
+# OS / editor noise
+.DS_Store
+
+# Runtime logs
+*.log

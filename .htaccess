@@ -1,0 +1,25 @@
+# ---- NM INFOCOM web root hardening (Apache 2.4) ----
+Options -Indexes
+ServerSignature Off
+
+# Never serve dotfiles (.git, .env, .htaccess), dependency manifests, dumps or docs.
+<FilesMatch "(^\.|\.(sql|md|lock|log|ini|sh|bak|swp)$|^composer\.(json|phar)$)">
+    Require all denied
+</FilesMatch>
+RedirectMatch 404 /\.git
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+    # Enable once the site is served only over HTTPS:
+    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    Header unset X-Powered-By
+</IfModule>
+
+<IfModule mod_php.c>
+    php_flag display_errors off
+    php_flag expose_php off
+    php_flag session.cookie_httponly on
+</IfModule>
