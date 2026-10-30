@@ -111,9 +111,11 @@ All screenshots are in [`docs/screenshots/`](docs/screenshots/).
 │   ├── config/          auth.php (JWT sessions, role checks, CSRF guard), login.php, uploads.php
 │   ├── layout/          shared shell (top.php / bottom.php / layout.css), dark/light theme, crm-charts.js
 │   │                    (chart styling), crm-ui.js (dialogs), dashboard_hero.php (KPI tiles), shared page bodies
-│   ├── shared/          endpoints used by several roles (profile, leaves, tasks, users, …)
+│   ├── shared/          endpoints used by several roles (profile, leaves, tasks, users, dashboard summary,
+│   │                    lead_update.php: validated lead edits for the admin and sales manager)
 │   ├── admin/           admin pages + data/ endpoints; workspaces.php opens every department desk
-│   ├── manager/<dept>/  marketing, sales, purchase, HR, website
+│   ├── manager/<dept>/  marketing, sales, purchase, HR, website (website/data/content_admin.php: whitelisted
+│   │                    add/edit/delete for the site's content tables)
 │   └── employee/<dept>/ marketing, sales, purchase
 ├── database/
 │   ├── schema.sql       full table structure (no data)
@@ -211,6 +213,21 @@ secrets out of the repository:
 6. Create the administrator over SSH: `php database/create_admin.php "Manish Nikte" mcnikte@nminfocom.com`
    (prints a temporary password; change it after signing in).
 7. Once the site is HTTPS-only, uncomment the `Strict-Transport-Security` header in `.htaccess`.
+
+### Updating an existing Hostinger site
+
+1. **Back up the database** (phpMyAdmin → Export) and keep a copy of the current files.
+2. Upload the new files (keep your `.env`; it is not in the repository).
+3. In phpMyAdmin → your database → **SQL**, run every migration you haven't applied yet, oldest first. For the
+   30 October 2026 release that means, in this order:
+   `2026_10_30_admin_name.sql`, `2026_10_30_partner_paths.sql`, `2026_10_30_content_primary_keys.sql`,
+   `2026_10_30_session_revocation.sql`, `2026_10_30_indexes.sql`, `2026_10_30_drop_unused_tables.sql`.
+4. Sign in and open a few pages for each department.
+
+The code keeps working if a migration hasn't run yet (for example, sign-in works without `tokens_valid_after`), but
+features that need the new structure stay off until it has: adding FAQs, team members or client logos needs
+`content_primary_keys`, and "a password change signs out other devices" needs `session_revocation`.
+The WitJab pages were removed; if a separate `witjab` database exists in hPanel, it can be deleted.
 
 Alternative: `SetEnv KEY value` lines work in `.htaccess` on Hostinger's LiteSpeed servers, but `.htaccess` lives in the
 web root and is usually committed, so prefer the `.env` file.
@@ -310,6 +327,8 @@ Found a vulnerability? Please email the address on the website's contact page in
 |---|---|
 | CRM says "CRM is not configured" | Set `CRM_JWT_SECRET` (32+ chars) in `.env` |
 | New-user email not sent | Check `SMTP_*` in `.env`; the admin sees the SMTP error and the temporary password |
+| Sign-in seems to work but you land back on the sign-in page | Upload the latest `CRM/config/auth.php`, or run `2026_10_30_session_revocation.sql` (older code needed its column) |
+| "Add" in Team / FAQs / Client logos / Stats fails with "Something went wrong" | Run `2026_10_30_content_primary_keys.sql` |
 | A page works locally but breaks on Hostinger with "Failed to open stream" | Linux file names are case-sensitive: the path's letter case must match the folder exactly (e.g. `Analytics/` vs `analytics/`) |
 | Not sure email works | Add a test user from the Employee List: if sending fails, the admin sees the exact SMTP error |
 | Blank page / 500 | Check the PHP error log in hPanel; temporarily set `APP_DEBUG=1` |
