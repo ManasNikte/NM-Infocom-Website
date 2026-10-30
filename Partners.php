@@ -55,7 +55,8 @@ $partnersPerSlide = 6; // 6 partners per slide (3x2 grid)
                                             <?php if (!empty($partner['partner_img'])): ?>
                                                 <img src="<?php echo htmlspecialchars($partner['partner_img']); ?>" 
                                                      alt="<?php echo htmlspecialchars($partner['partner_name']); ?>"
-                                                     class="partner-logo">
+                                                     class="partner-logo"
+                                                     onerror="this.replaceWith(Object.assign(document.createElement('span'), {className: 'partner-name-fallback', textContent: this.alt}))">
                                             <?php endif; ?>
                                         </div>
                                     </div>
@@ -151,7 +152,8 @@ $partnersPerSlide = 6; // 6 partners per slide (3x2 grid)
             color: #666;
             font-style: italic;
         }
-    </style>
+      .partner-name-fallback { font-weight: 700; font-size: 1.15rem; color: #334155; text-align: center; }
+</style>
 
     <!-- Search functionality script remains the same -->
     <script>

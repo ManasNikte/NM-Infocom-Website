@@ -10,6 +10,7 @@
           <p>Company-wide overview: people, pipeline, work and website activity.</p>
         </div>
         <div class="crm-hero-actions">
+        <a class="btn btn-sm" href="workspaces.php"><i class="fas fa-th-large mr-1"></i> Work as any role</a>
         <button type="button" class="btn btn-sm" id="admTestMail"><i class="fas fa-paper-plane mr-1"></i> Send test email</button>
         <label class="adm-range">Trend range
           <select id="admRange" class="form-control form-control-sm">

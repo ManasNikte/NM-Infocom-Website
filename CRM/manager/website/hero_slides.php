@@ -319,7 +319,7 @@ function renderTable(slides) {
                 <td class="text-center">
                     <img src="../../../${esc(slide.slide_img || '')}" alt="Slide Image" 
                          style="max-width: 100px; height: auto;" 
-                         onerror="this.src='assets/img/hero/placeholder-image.jpg'">
+                         onerror="this.onerror=null; this.src='../../images/placeholder/image.svg'">
                 </td>
                 <td class="text-center">${esc(slide.slide_title || '')}</td>
                 <td class="text-center">${esc(slide.slide_description || '')}</td>

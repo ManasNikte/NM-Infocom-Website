@@ -114,6 +114,67 @@ function crm_login_url() {
 }
 
 /**
+ * Department workspace a CRM URL path belongs to: ['Manager', 'sales'] for /CRM/manager/sales/…, null elsewhere.
+ * Folder names are matched case-insensitively (manager/HR -> 'hr').
+ */
+function crm_workspace_of_path($path) {
+    if (preg_match('#^(?:/[\w.-]+)*/CRM/(manager|employee)/(marketing|sales|purchase|website|hr)/(?:(?:data|analytics)/)?[\w.-]*$#i', (string) $path, $m)) {
+        return [ucfirst(strtolower($m[1])), strtolower($m[2])];
+    }
+    return null;
+}
+
+/**
+ * Admins can work inside any manager or employee workspace with that role's tools.
+ *
+ * The workspace comes from the script's own folder (pages and their data/ endpoints) or, for shared/
+ * endpoints, from the same-origin page that called them (Referer). The returned token then reads as that
+ * department's Manager/Employee, so every existing department check applies unchanged, while `id` stays the
+ * admin's own (records show who acted) and `acting_admin` marks the session. Only a signed-in admin token
+ * is ever converted, so the Referer cannot grant anything an admin couldn't already do.
+ *
+ * @return object|null acting token, or null when the request is not in a workspace this endpoint serves
+ */
+function crm_admin_workspace_token($token, array $allowed, $subRole) {
+    $workspace = crm_workspace_of_path($_SERVER['SCRIPT_NAME'] ?? '');
+    if (!$workspace && !empty($_SERVER['HTTP_REFERER'])) {
+        $ref = parse_url($_SERVER['HTTP_REFERER']);
+        $host = parse_url('//' . ($_SERVER['HTTP_HOST'] ?? ''), PHP_URL_HOST);
+        if (($ref['host'] ?? null) === $host) {
+            $workspace = crm_workspace_of_path($ref['path'] ?? '');
+        }
+    }
+    if (!$workspace) {
+        return null;
+    }
+    [$actRole, $dept] = $workspace;
+    if (!in_array(strtolower($actRole), $allowed, true) || ($subRole !== null && $subRole !== $dept)) {
+        return null;
+    }
+    $acting = clone $token;
+    $acting->role = $actRole;
+    $acting->sub_role = $dept;
+    $acting->acting_admin = true;
+    return $acting;
+}
+
+/**
+ * Applies the admin workspace rule: inside a workspace an admin acts as its manager/employee; elsewhere
+ * (admin pages) the admin keeps admin rights. Non-admin tokens are returned unchanged.
+ */
+function crm_effective_token($token, $roles, $subRole) {
+    if (!$token || strtolower($token->role ?? '') !== 'admin') {
+        return $token;
+    }
+    $allowed = array_map('strtolower', (array) $roles);
+    $acting = crm_admin_workspace_token($token, $allowed, $subRole);
+    if ($acting) {
+        return $acting;
+    }
+    return in_array('admin', $allowed, true) ? $token : null;
+}
+
+/**
  * @param string|string[] $roles    Allowed roles ('Admin', 'Manager', 'Employee').
  * @param string|null     $subRole  Required sub_role for non-admin roles (Admin always passes).
  */
@@ -132,7 +193,7 @@ function crm_is_allowed($token, $roles, $subRole = null) {
 function crm_require_page($roles, $subRole = null) {
     crm_security_headers();
     crm_reject_cross_site();
-    $token = crm_token();
+    $token = crm_effective_token(crm_token(), $roles, $subRole);
     if (!crm_is_allowed($token, $roles, $subRole)) {
         header('Location: ' . crm_login_url());
         exit();
@@ -143,8 +204,10 @@ function crm_require_page($roles, $subRole = null) {
 function crm_require_api($roles, $subRole = null) {
     crm_security_headers();
     crm_reject_cross_site();
-    $token = crm_token();
+    $raw = crm_token();
+    $token = crm_effective_token($raw, $roles, $subRole);
     if (!crm_is_allowed($token, $roles, $subRole)) {
+        $token = $raw;
         header('Content-Type: application/json');
         http_response_code($token ? 403 : 401);
         echo json_encode(['success' => false, 'status' => 'error', 'message' => $token ? 'Forbidden' : 'Unauthorized']);

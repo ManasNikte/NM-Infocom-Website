@@ -1,6 +1,5 @@
 <?php
-require_once __DIR__ . '/config/format.php'; 
-require "./components/top.php";
+require_once __DIR__ . '/config/format.php';
 require "./data/product_data.php";
 
 // Get product ID from URL parameter
@@ -17,11 +16,12 @@ if ($product_id) {
     }
 }
 
-// Redirect if product not found
+// Redirect if product not found (before any page markup is sent)
 if (!$product) {
     header('Location: products.php');
     exit;
 }
+require "./components/top.php";
 ?>
 
 <!-- Hero section -->

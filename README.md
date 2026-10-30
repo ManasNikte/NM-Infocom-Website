@@ -53,6 +53,7 @@ shell in the CRM.
   rate, leave requests, plus leads, vendors, jobs or website inbox numbers for the department.
 - **Admin**: live dashboard (KPIs, leads, tasks, staff, leave, website activity), departments overview, staff
   directory with **Add user** (any role; login details emailed over SMTP), leads, vendors, careers, tasks, leave approvals.
+  **Workspaces** (sidebar → *Work as*) open every manager and employee desk, so the admin can do anything any role can.
 - **Managers** (marketing, sales, purchase, HR, website): department dashboard, team list, team leave approvals, task
   assignment; HR adds staff; website manager edits site content (blog posts, products, events, reviews, FAQs…).
 - **Employees**: personal dashboard, own tasks, leave requests, leads/sales/vendors for their department.
@@ -208,6 +209,21 @@ web root and is usually committed, so prefer the `.env` file.
 | Approve / reject leave | all | own team | own team | |
 | Assign tasks | anyone | own department | own department | |
 | Own profile, password, tasks, leave requests | ✅ | ✅ | ✅ | ✅ |
+| Work inside any manager or employee desk | ✅ | | | |
+
+### Admin workspaces
+
+From **Work as** in the sidebar (or **Work as any role** on the dashboard) the admin opens any department desk:
+HR, Marketing, Sales, Purchase and Website manager, and the Marketing, Sales and Purchase employee desks. An amber
+bar shows which role is in use, with a switcher and **Back to admin**.
+
+How it stays safe (`crm_admin_workspace_token()` in `CRM/config/auth.php`):
+
+- Only a signed-in **admin** token is ever converted; managers and employees get nothing new.
+- The desk comes from the page's own folder (`/CRM/manager/<dept>/…`), or, for `CRM/shared/` endpoints, from the
+  same-origin page that called them. Inside a desk the admin is treated as that desk's manager/employee, so every
+  existing department rule applies unchanged (e.g. the HR desk can't create admins; use the admin Employee List).
+- Records keep the admin's own user id (`assigned_by`, `action_by`, `added_by`), so it is always visible who acted.
 
 New users receive an email with the sign-in link and a random temporary password and should change it under
 **My Profile → Update Password**. If email isn't configured, the admin is shown the temporary password once instead.
@@ -243,6 +259,7 @@ Notifications are best-effort: if SMTP is down, the task or leave is still saved
 | `2026_10_29_contact_email.sql` | Sets the public contact email to `mcnikte@nminfocom.com` |
 | `2026_10_29_utf8mb4_tables.sql` | Converts the remaining latin1 tables to utf8mb4 so ₹ and Indian-language text can be stored |
 | `2026_10_30_admin_name.sql` | Names the administrator account Manish Nikte |
+| `2026_10_30_partner_paths.sql` | Fixes one partner logo stored with a root-relative path |
 
 ## Security model
 
@@ -266,6 +283,7 @@ Found a vulnerability? Please email the address on the website's contact page in
 |---|---|
 | CRM says "CRM is not configured" | Set `CRM_JWT_SECRET` (32+ chars) in `.env` |
 | New-user email not sent | Check `SMTP_*` in `.env`; the admin sees the SMTP error and the temporary password |
+| A page works locally but breaks on Hostinger with "Failed to open stream" | Linux file names are case-sensitive: the path's letter case must match the folder exactly (e.g. `Analytics/` vs `analytics/`) |
 | Not sure email works | Admin dashboard → **Send test email**; the reply shows the exact SMTP error if it fails |
 | Blank page / 500 | Check the PHP error log in hPanel; temporarily set `APP_DEBUG=1` |
 | Images or PDFs 404 after moving folders | Paths are stored relative to the site root (`uploads/...`); run the migrations |

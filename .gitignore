@@ -10,3 +10,6 @@ uploads/resume/*
 
 # Runtime logs
 *.log
+
+# Database exports (contain personal data)
+/nm_database_export_*.sql

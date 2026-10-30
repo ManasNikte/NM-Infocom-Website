@@ -19,6 +19,12 @@ $db = new Database();
 $conn = $db->getConnection();
 $user = crm_current_user($conn);
 $user_id = $user['id'] ?? null;
+// An admin working inside a department workspace uses that role's view of the data (see crm_admin_workspace_token).
+$actingAdmin = !empty($auth->acting_admin);
+if ($actingAdmin && $user) {
+    $user['role'] = $auth->role;
+    $user['sub_role'] = $auth->sub_role;
+}
 $role = $user['role'] ?? null;
 $sub_role = $user['sub_role'] ?? null;
 
@@ -41,7 +47,16 @@ foreach ($section['nav'] as [$href, , $label]) {
         $pageHeading = $label;
     }
 }
+$pageHeading = $section['heading'] ?? $pageHeading;
 $roleLabel = $section['role'] === 'Admin' ? 'Administrator' : $section['role'] . ' · ' . ($section['sub_role'] === 'hr' ? 'HR' : ucfirst((string) $section['sub_role']));
+// Workspaces an admin can open: every manager desk, and the employee desks that exist.
+$crmWorkspaces = [
+    'Managers' => ['manager/HR/dashboard.php' => 'HR Manager', 'manager/marketing/dashboard.php' => 'Marketing Manager',
+                   'manager/sales/dashboard.php' => 'Sales Manager', 'manager/purchase/dashboard.php' => 'Purchase Manager',
+                   'manager/website/dashboard.php' => 'Website Manager'],
+    'Employees' => ['employee/marketing/main.php' => 'Marketing Employee', 'employee/sales/main.php' => 'Sales Employee',
+                    'employee/purchase/main.php' => 'Purchase Employee'],
+];
 $nameParts = preg_split('/\s+/', trim($user['name'] ?? '?'));
 $initials = strtoupper(mb_substr($nameParts[0], 0, 1) . (count($nameParts) > 1 ? mb_substr(end($nameParts), 0, 1) : ''));
 ?>
@@ -81,7 +96,7 @@ $initials = strtoupper(mb_substr($nameParts[0], 0, 1) . (count($nameParts) > 1 ?
   <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet" />
-  <link href="<?= $crm ?>layout/layout.css?v=15" rel="stylesheet" media="all" />
+  <link href="<?= $crm ?>layout/layout.css?v=16" rel="stylesheet" media="all" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="<?= $crm ?>layout/crm-charts.js?v=6"></script>
   <script>
@@ -105,8 +120,20 @@ $initials = strtoupper(mb_substr($nameParts[0], 0, 1) . (count($nameParts) > 1 ?
       <div class="crm-nav-label"><?= htmlspecialchars($roleLabel) ?></div>
       <nav>
         <ul class="crm-nav">
+          <?php if ($actingAdmin): ?>
+            <li><a class="crm-nav-link crm-nav-back" href="<?= $crm ?>admin/dashboard.php"><i class="fas fa-arrow-left"></i><span>Admin dashboard</span></a></li>
+          <?php endif; ?>
           <?php $renderNav(); ?>
         </ul>
+        <?php if (($section['role'] ?? '') === 'Admin'): ?>
+          <div class="crm-nav-label">Work as</div>
+          <ul class="crm-nav">
+            <li><a class="crm-nav-link<?= $currentPage === 'workspaces.php' ? ' active' : '' ?>" href="<?= $crm ?>admin/workspaces.php"><i class="fas fa-th-large"></i><span>All workspaces</span></a></li>
+            <?php foreach ($crmWorkspaces['Managers'] as $href => $label): ?>
+              <li><a class="crm-nav-link" href="<?= $crm . $href ?>"><i class="fas fa-briefcase"></i><span><?= $label ?></span></a></li>
+            <?php endforeach; ?>
+          </ul>
+        <?php endif; ?>
       </nav>
       <div class="crm-user">
         <span class="crm-avatar" aria-hidden="true"><?= htmlspecialchars($initials) ?></span>
@@ -134,3 +161,20 @@ $initials = strtoupper(mb_substr($nameParts[0], 0, 1) . (count($nameParts) > 1 ?
           <span class="crm-chip-name"><?= htmlspecialchars($user['name'] ?? '') ?></span>
         </div>
       </header>
+      <?php if ($actingAdmin): ?>
+        <div class="crm-acting" role="status">
+          <span class="crm-acting-icon"><i class="fas fa-user-shield" aria-hidden="true"></i></span>
+          <span class="crm-acting-text">Admin mode: you're working as <b><?= htmlspecialchars($roleLabel) ?></b>. Changes are recorded under your own account.</span>
+          <label class="crm-acting-switch"><span class="sr-only">Switch workspace</span>
+            <select onchange="if (this.value) location.href = this.value" aria-label="Switch workspace">
+              <option value="">Switch workspace…</option>
+              <?php foreach ($crmWorkspaces as $group => $items): ?>
+                <optgroup label="<?= $group ?>">
+                  <?php foreach ($items as $href => $label): ?><option value="<?= $crm . $href ?>"><?= $label ?></option><?php endforeach; ?>
+                </optgroup>
+              <?php endforeach; ?>
+            </select>
+          </label>
+          <a class="btn btn-sm crm-acting-back" href="<?= $crm ?>admin/dashboard.php"><i class="fas fa-arrow-left mr-1"></i> Back to admin</a>
+        </div>
+      <?php endif; ?>

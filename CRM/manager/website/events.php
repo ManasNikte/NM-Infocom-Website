@@ -915,7 +915,7 @@
                                     <img src="../../../uploads/events/${escapeHtml(event.image || 'default-event.jpg')}" 
                                          alt="${escapeHtml(eventTitle)}" 
                                          class="img-fluid rounded"
-                                         onerror="this.src='default-event.jpg'"
+                                         onerror="this.onerror=null; this.src='../../images/placeholder/image.svg'"
                                          style="width: 60px; height: 40px; object-fit: cover;">
                                 </div>
                             </td>

@@ -4,6 +4,7 @@ $section = [
     'sub_role' => null,
     'title' => 'Admin',
     'base' => '../',
+    'heading' => $adminHeading ?? null,
     'nav' => [
         ['dashboard.php', 'fas fa-chart-bar', 'Dashboard'],
         ['profile.php', 'fas fa-user', 'My Profile'],

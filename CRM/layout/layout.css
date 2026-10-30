@@ -636,3 +636,21 @@ body.crm .modal-content:not(#_p) span[style*="color:red"], body.crm .modal-conte
 html[data-theme="dark"] body.crm .swal2-popup:not(#_p):not(#_q) span[style*="color:red"], html[data-theme="dark"] body.crm .swal2-popup:not(#_p):not(#_q) span[style*="color: red"],
 html[data-theme="dark"] body.crm .modal-content:not(#_p) span[style*="color:red"], html[data-theme="dark"] body.crm .modal-content:not(#_p) span[style*="color: red"] { color: #fb7185 !important; }
 html[data-theme="dark"] body.crm .change-indicator.neutral { color: #cbd5e1 !important; background: rgba(148, 163, 184, .14) !important; }
+
+/* Admin working inside a department workspace */
+.crm-acting {
+  position: sticky; top: var(--crm-topbar); z-index: 1029; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 28px; background: linear-gradient(90deg, rgba(245, 158, 11, .16), rgba(245, 158, 11, .06)); border-bottom: 1px solid rgba(245, 158, 11, .35);
+  color: var(--crm-heading); font-size: .86rem; backdrop-filter: blur(8px);
+}
+.crm-acting-icon { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: #f59e0b; color: #fff; flex: none; }
+.crm-acting-text { flex: 1; min-width: 220px; }
+.crm-acting-text b { color: #b45309; }
+html[data-theme="dark"] .crm-acting-text b { color: #fbbf24; }
+.crm-acting-switch { margin: 0; }
+.crm-acting-switch select {
+  min-height: 34px; padding: 4px 30px 4px 10px; border-radius: 9px; border: 1px solid var(--crm-input-border); background-color: var(--crm-surface); color: var(--crm-heading); font-size: .84rem;
+}
+body.crm .crm-acting-back { background: var(--crm-surface) !important; border: 1px solid var(--crm-border) !important; color: var(--crm-heading) !important; }
+.crm-nav-link.crm-nav-back { color: #fbbf24 !important; background: rgba(245, 158, 11, .1); margin-bottom: 6px; }
+@media (max-width: 991px) { .crm-acting { padding: 10px 16px; } .crm-acting-text { min-width: 0; flex-basis: 100%; } }

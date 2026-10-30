@@ -3,7 +3,7 @@
       <div class="main-content" style="min-height: 100vh;">
         <div class="section__content section__content--p30">
           <div class="container-fluid" style="min-height: 90vh; display: flex; flex-direction: column; justify-content: flex-start;">
-          <?php require_once './analytics/career_analytics_cards.php'; ?>
+          <?php require_once __DIR__ . '/Analytics/career_analytics_cards.php'; ?>
 
             <!-- Jobs Application Table Card -->
             <div class="row mt-6" style="margin-bottom: 32px;">

@@ -182,7 +182,7 @@ function renderTable(clientLogos) {
                 <td>
                     <img src="../../../${esc(client.client_img)}" alt="Client Logo" 
                          class="img-fluid rounded" 
-                         onerror="this.src='placeholder-image.jpg'">
+                         onerror="this.onerror=null; this.src='../../images/placeholder/image.svg'">
                 </td>
                 <td>${esc(client.client_name)}</td>
                 <td>${esc(client.date_added)}</td>
