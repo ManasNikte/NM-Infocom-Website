@@ -115,9 +115,18 @@ function crm_token() {
  * So firing someone or changing a password ends their other sessions at once. One primary-key lookup per request.
  */
 function crm_session_still_valid($token) {
+    $id = (int) ($token->id ?? 0);
     try {
-        $stmt = (new Database())->getConnection()->prepare('SELECT role, sub_role, status, tokens_valid_after FROM users WHERE id = ?');
-        $stmt->execute([(int) ($token->id ?? 0)]);
+        $conn = (new Database())->getConnection();
+        try {
+            $stmt = $conn->prepare('SELECT role, sub_role, status, tokens_valid_after FROM users WHERE id = ?');
+            $stmt->execute([$id]);
+        } catch (PDOException $e) {
+            // Database not migrated yet (2026_10_30_session_revocation.sql): check everything except that column.
+            error_log('crm_session_still_valid: ' . $e->getMessage() . ' (run database/migrations/2026_10_30_session_revocation.sql)');
+            $stmt = $conn->prepare('SELECT role, sub_role, status, NULL AS tokens_valid_after FROM users WHERE id = ?');
+            $stmt->execute([$id]);
+        }
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
     } catch (Exception $e) {
         error_log('crm_session_still_valid: ' . $e->getMessage());
