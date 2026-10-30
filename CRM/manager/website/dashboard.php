@@ -342,21 +342,27 @@ require_once './top.php';
 <!-- Add necessary JavaScript -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Load bar chart data
-        fetch('./data/bar_chart_data.php?ajax=true')
-            .then(response => response.json())
-            .then(data => {
-                initBarChart(data);
-            });
+        // Chart data; re-run by crmLiveRefresh when the tab comes back or another tab saves a change.
+        function crmLoadCharts() {
+            // Load bar chart data
+            fetch('./data/bar_chart_data.php?ajax=true')
+                .then(response => response.json())
+                .then(data => {
+                    initBarChart(data);
+                });
 
         
-        // Load pie chart data
-        fetch('../../shared/task_status.php')
-            .then(response => response.json())
-            .then(data => {
-                initPieChart(data);
-            });
+            // Load pie chart data
+            fetch('../../shared/task_status.php')
+                .then(response => response.json())
+                .then(data => {
+                    initPieChart(data);
+                });
         
+        }
+        crmLoadCharts();
+        crmLiveRefresh(crmLoadCharts);
+
         function initBarChart(data) {
             const customBarCtx = document.getElementById('customBarChart').getContext('2d');
             
@@ -693,6 +699,7 @@ require_once './top.php';
 
         // Initial load
         loadTasks(currentPage, '', 'all');
+        crmLiveRefresh(function () { loadTasks(currentPage, searchInput.value, currentStatus); });
     });
 </script>
 

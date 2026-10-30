@@ -73,5 +73,5 @@ try {
         echo json_encode(['success' => false, 'message' => 'No changes made or lead not found, or you do not have permission to edit this lead.']);
     }
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => crm_public_error($e)]);
 } 

@@ -10,6 +10,7 @@
                   <div class="card-header">
                     <h3 class="text-primary">Hero Slides Management</h3>
                     <small class="text-muted">Manage hero slides</small>
+                    <button type="button" class="btn btn-primary btn-sm ml-auto" onclick="crmAddContent()"><i class="fas fa-plus mr-1"></i> Add slide</button>
                   </div>
                   <div class="card-body">
                     <div class="table-responsive table-responsive-data2">
@@ -324,8 +325,8 @@ function renderTable(slides) {
                 <td class="text-center">${esc(slide.slide_title || '')}</td>
                 <td class="text-center">${esc(slide.slide_description || '')}</td>
                 <td class="text-center">${esc(slide.link || '')}</td>
-                <td class="text-center">${dateAdded}</td>
-                <td class="text-center">${lastModified}</td>
+                <td class="text-center">${esc(dateAdded)}</td>
+                <td class="text-center">${esc(lastModified)}</td>
                 <td class="text-center">
                     <div class="action-buttons d-flex justify-content-center">
                         <button class="btn btn-primary btn-sm" onclick="editSlide(${esc(slide.slide_id)})">
@@ -340,74 +341,8 @@ function renderTable(slides) {
     });
 }
 
-// Function to edit slide
-function editSlide(id) {
-    // Find the slide data from the current table
-    const slideRow = document.querySelector(`tr[data-slide-id="${id}"]`);
-    if (!slideRow) return;
 
-    // Populate the modal with current data
-    document.getElementById('editSlideId').value = id;
-    document.getElementById('currentSlideImage').src = slideRow.querySelector('img').src;
-    document.getElementById('slideTitle').value = slideRow.querySelector('td:nth-child(3)').textContent;
-    document.getElementById('slideDescription').value = slideRow.querySelector('td:nth-child(4)').textContent;
-    document.getElementById('slideLink').value = slideRow.querySelector('td:nth-child(5)').textContent;
 
-    // Show the modal
-    $('#editSlideModal').modal('show');
-}
-
-// Function to update order
-function updateOrder(id) {
-    const newOrder = prompt("Enter new display order:");
-    if (newOrder !== null) {
-        fetch(`./data/hero_slides_data.php`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'updateOrder',
-                slide_id: id,
-                new_order: newOrder
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                loadTableData(currentPage);
-            } else {
-                alert('Failed to update order');
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    }
-}
-
-// Function to delete slide
-function deleteSlide(id) {
-    if (confirm('Are you sure you want to delete this slide?')) {
-        fetch(`./data/hero_slides_data.php`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'delete',
-                slide_id: id
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                loadTableData(currentPage);
-            } else {
-                alert('Failed to delete slide');
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    }
-}
 
 // Function to render pagination
 function renderPagination(pagination) {
@@ -450,15 +385,15 @@ function changePage(page) {
     loadTableData(page);
 }
 
-// Function to start polling
+// Keep the table current (crmLiveRefresh)
 function startPolling() {
     loadTableData(currentPage);
-    pollingInterval = setInterval(() => {
+    pollingInterval = crmLiveRefresh(() => {
         loadTableData(currentPage);
-    }, 3000);
+    });
 }
 
-// Start polling when the page loads
+// Load the table, then keep it current (crmLiveRefresh)
 document.addEventListener('DOMContentLoaded', () => {
     startPolling();
 });
@@ -491,4 +426,33 @@ modalStyle.textContent = `
     }
 `;
 document.head.appendChild(modalStyle);
+</script>
+
+<script>
+// Real create / edit / delete (data/content_admin.php); replaces the old demo-only handlers.
+(function () {
+  const resource = "hero_slides", pk = "slide_id", noun = "slide", labelField = "slide_title";
+  const fields = [{"label": "Title", "name": "slide_title", "type": "text", "required": true, "wide": true}, {"label": "Description", "name": "slide_description", "type": "textarea", "required": false, "rows": 3}, {"label": "Button link", "name": "link", "type": "url", "required": false, "placeholder": "https://"}, {"label": "Order", "name": "display_order", "type": "number", "required": false, "value": "0"}];
+  const image = {"field": "slide_img", "label": "Slide image", "required": true};
+  let rows = {};
+  const baseRender = window.renderTable;
+  window.renderTable = function (list) {
+    rows = {};
+    (list || []).forEach((r) => { rows[r[pk]] = r; });
+    return baseRender.apply(this, arguments);
+  };
+  const reload = () => (typeof loadTableData === 'function' ? loadTableData(typeof currentPage !== 'undefined' ? currentPage : 1) : location.reload());
+  const imageOpts = (rec) => image && { label: image.label, required: image.required, current: rec && rec[image.field] ? '../../../' + rec[image.field].replace(/^\.?\//, '') : '' };
+  function edit(id) {
+    const rec = rows[id];
+    if (!rec) return Swal.fire({ icon: 'info', title: 'Refresh the page', text: 'This item was changed or removed.' });
+    crmContentEditor({ resource, title: 'Edit ' + noun, fields, image: imageOpts(rec), record: Object.assign({ __id: rec[pk] }, rec), onDone: reload });
+  }
+  window.crmAddContent = function () {
+    crmContentEditor({ resource, title: 'Add ' + noun, fields, image: imageOpts(null), record: null, onDone: reload });
+  };
+  window["editSlide"] = edit;
+  
+  window["deleteSlide"] = (id) => crmContentDelete({ resource, id, label: (rows[id] && rows[id][labelField]) || noun, onDone: reload });
+})();
 </script>

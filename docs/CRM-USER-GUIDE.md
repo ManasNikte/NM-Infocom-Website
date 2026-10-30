@@ -72,6 +72,9 @@ outside it to close it. Tables scroll sideways inside their card.
 |---|---|
 | ![Phone dashboard](screenshots/37-crm-mobile-dashboard.png) | ![Phone menu](screenshots/28-crm-mobile-menu.png) |
 
+**Up-to-date numbers.** Lists, tiles and charts refresh by themselves when you come back to the CRM tab, and right
+after you save something in another CRM tab, so there's no need to keep reloading the page.
+
 **Tables.** Most lists have a **search box** (searches every column), **filters** (status, date, person) and
 **pagination** at the bottom. Filters combine: for example *status = Pending* plus a date.
 
@@ -389,9 +392,10 @@ Everything on the public website is edited from here, so there is no need to tou
 | **NM Reviews** | Customer reviews. Make each one **public** (shown on the website) or **private** (hidden). |
 | **Contact Submits** | Messages from the website's contact form. Contact the customer, then select **Respond** to record your reply; the message is marked *Responded*. (The CRM records the reply; it doesn't email it.) |
 | **Blogs** | Write posts: title, author, topic, summary, article and cover image. Save as **Draft**, then **Publish**; *Hide* takes a post off the site without deleting it. The editor supports simple formatting: `## heading`, `**bold**`, `- bullet`, `[link](https://…)`. |
-| **Events** | Events with date, time, mode (in person, virtual, hybrid), location and image. They move from *Upcoming* to *Past* on the website automatically, using Indian time. |
-| **NM Newsletter** | Newsletter subscribers. |
-| **NM Web Data** | Shortcuts to the homepage sections: hero slides, about slides, client logos, team, stats, *why choose us* cards, FAQs and the web line. |
+| **Events** | Events with date, time, mode (in person, virtual, hybrid), location, image and the **registration link** behind the website's *Register* button. They move from *Upcoming* to *Past* on the website automatically, using Indian time. |
+| **NM Newsletter** | Everyone who signed up on the website: active and unsubscribed counts, search, **Unsubscribe / Resubscribe**, delete, and **Export CSV** for your email tool. |
+| **NM Web Data** | Shortcuts to the homepage sections. **Team**, **Client logos**, **Stats**, ***Why choose us* cards** and **FAQs** each have **Add**, **Edit** and **Delete**; **Web line** (site name, phone, email, address, social links) can be edited. Changes appear on the website immediately. |
+| **Hero slides** | Managed here, but the current homepage uses its own built-in slider, so changes don't show on the live site yet. |
 
 | Blog posts | Blog editor |
 |---|---|
@@ -467,7 +471,7 @@ can't be delivered.
 |---|---|
 | I didn't receive my login email | Check spam. Otherwise ask HR or the admin to create the account again. |
 | "Invalid email or password" | Check for typos with the eye icon. After 10 failures, wait 15 minutes. |
-| I'm sent back to the sign-in page | Your session expired (24 hours) or you signed out elsewhere. Sign in again. |
+| I'm sent back to the sign-in page | Your session expired (24 hours), your password was changed (which signs out your other devices), or your account was changed or removed. Sign in again, or ask the admin. |
 | A page looks broken or empty | Refresh the page (Ctrl+F5 / Cmd+Shift+R). If it persists, tell the admin which page and what you did. |
 | I can't see a menu item a colleague has | Menus depend on role and department. Ask the admin if you need access. |
 | The Assign task form says *No one to assign yet* | Your department has no active employees yet. HR or the admin can add them. |

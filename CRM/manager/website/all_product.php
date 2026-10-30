@@ -189,14 +189,10 @@
 <?php require './bottom.php'; ?>
 
 <!-- SweetAlert2 CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.css">
 
 <!-- JavaScript Libraries -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <!-- Bootstrap Bundle with Popper -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
 
 <style>
 /* Card Styling */
@@ -1119,7 +1115,7 @@ function renderTable(products, searchTerm = '') {
             // Enhanced description with tooltip
             const descriptionCell = `
                 <div class="description-cell" title="${esc(product.description ? product.description.replace(/"/g, '&quot;') : 'No description')}">
-                    <span class="description-text">${descShort}</span>
+                    <span class="description-text">${esc(descShort)}</span>
                 </div>
             `;
             
@@ -1159,7 +1155,7 @@ function renderTable(products, searchTerm = '') {
                     <div class="no-data-message">
                         <i class="fa fa-search fa-3x text-muted mb-3"></i>
                         <h5 class="text-muted">No Results Found</h5>
-                        <p class="text-muted">No products match your search criteria: "<strong>${searchTerm}</strong>"</p>
+                        <p class="text-muted">No products match your search criteria: "<strong>${esc(searchTerm)}</strong>"</p>
                     </div>
                 </td>
             </tr>
@@ -1208,12 +1204,12 @@ function changePage(page) {
     loadTableData(page);
 }
 
-// Function to start polling
+// Keep the table current (crmLiveRefresh)
 function startPolling() {
     loadTableData(currentPage);
-    pollingInterval = setInterval(() => {
+    pollingInterval = crmLiveRefresh(() => {
         loadTableData(currentPage);
-    }, 3000);
+    });
 }
 
 // Function to search products
@@ -1939,14 +1935,14 @@ function renderCategoriesTable(categories) {
             <td class="text-center align-middle">
                 <div class="btn-group" role="group">
                     <button type="button" class="btn btn-sm btn-outline-primary px-3" 
-                            onclick="editCategory(${esc(category.category_id)}, '${escapeHtml(category.category_name)}')"
-                            data-bs-toggle="tooltip" title="Edit">
+                            data-name="${esc(category.category_name)}" onclick="editCategory(${esc(category.category_id)}, this.dataset.name)"
+                            data-toggle="tooltip" title="Edit">
                         <i class="fas fa-pencil-alt"></i>
                     </button>
                     <button type="button" class="btn btn-sm btn-outline-danger px-3" 
-                            onclick="deleteCategory(${esc(category.category_id)}, '${escapeHtml(category.category_name)}', ${canDelete})"
+                            data-name="${esc(category.category_name)}" onclick="deleteCategory(${esc(category.category_id)}, this.dataset.name, ${canDelete})"
                             ${!canDelete ? 'disabled' : ''}
-                            data-bs-toggle="tooltip" 
+                            data-toggle="tooltip" 
                             title="${!canDelete ? 'Cannot delete - has active products' : 'Delete'}">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -1958,7 +1954,7 @@ function renderCategoriesTable(categories) {
     
     // Initialize tooltips if Bootstrap tooltip plugin is available
     if (typeof $.fn.tooltip === 'function') {
-        $('[data-bs-toggle="tooltip"]').tooltip();
+        $('[data-toggle="tooltip"]').tooltip();
     } else {
         console.warn('Bootstrap tooltip plugin not available');
     }
@@ -1967,7 +1963,7 @@ function renderCategoriesTable(categories) {
 // Show add/edit category modal
 function showCategoryModal(categoryId = '', categoryName = '') {
     // Decode HTML entities in category name
-    const decodedName = $('<div/>').html(categoryName).text();
+    const decodedName = String(categoryName ?? '');
     
     Swal.fire({
         title: categoryId ? 'Edit Category' : 'Add New Category',
@@ -1976,7 +1972,7 @@ function showCategoryModal(categoryId = '', categoryName = '') {
                 <input type="hidden" id="categoryId" value="${categoryId || ''}">
                 <div class="mb-3">
                     <label for="categoryName" class="form-label">Category Name</label>
-                    <input type="text" class="form-control" id="categoryName" value="${decodedName}" required>
+                    <input type="text" class="form-control" id="categoryName" value="${esc(decodedName)}" required>
                 </div>
             </form>
         `,
@@ -2014,8 +2010,7 @@ function showCategoryModal(categoryId = '', categoryName = '') {
                     confirmButtonColor: '#4e73df'
                 }).then(() => {
                     // Close modal and refresh categories
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModal'));
-                    modal.hide();
+                    $('#categoryModal').modal('hide');
                     // Reload categories on the first page
                     loadCategoriesTable(1);
                 });

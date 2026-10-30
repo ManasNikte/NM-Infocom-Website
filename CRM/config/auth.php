@@ -102,8 +102,34 @@ function crm_token() {
                 $decoded = null;
             }
         }
+        if ($decoded && !crm_session_still_valid($decoded)) {
+            $decoded = null;
+        }
     }
     return $decoded;
+}
+
+/**
+ * A signed token alone isn't enough: the account must still exist, be active, have the same role and
+ * department, and the token must be newer than the account's last password change (tokens_valid_after).
+ * So firing someone or changing a password ends their other sessions at once. One primary-key lookup per request.
+ */
+function crm_session_still_valid($token) {
+    try {
+        $stmt = (new Database())->getConnection()->prepare('SELECT role, sub_role, status, tokens_valid_after FROM users WHERE id = ?');
+        $stmt->execute([(int) ($token->id ?? 0)]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        error_log('crm_session_still_valid: ' . $e->getMessage());
+        return false;
+    }
+    if (!$row || !in_array(strtolower((string) $row['status']), ['', 'active'], true)) {
+        return false;
+    }
+    if ($row['role'] !== ($token->role ?? null) || ($row['sub_role'] ?? null) !== ($token->sub_role ?? null)) {
+        return false;
+    }
+    return !$row['tokens_valid_after'] || (int) ($token->iat ?? 0) >= strtotime($row['tokens_valid_after']);
 }
 
 /** URL of the CRM login page, relative to the site root, wherever the app is installed. */
@@ -225,4 +251,19 @@ function crm_current_user(PDO $conn) {
     $stmt = $conn->prepare('SELECT id, name, contact, email, DOB AS dob, role, sub_role, status, date_of_joining FROM users WHERE id = ? LIMIT 1');
     $stmt->execute([$token->id]);
     return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+/**
+ * Message safe to show the user for a caught exception. Database/driver errors and anything that looks like
+ * internals (SQL, file paths) become a generic message; deliberate validation messages pass through.
+ * The full error always goes to the server log.
+ */
+function crm_public_error($e, $fallback = 'Something went wrong. Please try again.') {
+    $message = $e instanceof Throwable ? $e->getMessage() : (string) $e;
+    if ($e instanceof Throwable) {
+        error_log(basename($e->getFile()) . ':' . $e->getLine() . ' ' . $message);
+    }
+    $internal = ($e instanceof PDOException)
+        || preg_match('/SQLSTATE|PDO|mysqli|SQL syntax|Unknown column|Table \'|Duplicate entry|constraint|Integrity|Data truncated|\\/home\\/|\\/Users\\/|\\.php\\b|Stack trace/i', $message);
+    return $internal ? $fallback : preg_replace('/^(Database error|DB error|Error|Server error):\s*/i', '', $message);
 }

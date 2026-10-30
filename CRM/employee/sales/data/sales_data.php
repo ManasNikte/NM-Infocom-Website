@@ -74,27 +74,17 @@ $paginated_leads = array_map(function($lead) {
     ];
 }, $leads);
 
+/** True when the lead exists and is assigned to this employee (an unchanged value updates 0 rows). */
+function crm_owns_lead(PDO $conn, $leadId, $userId) {
+    $q = $conn->prepare('SELECT COUNT(*) FROM leads WHERE lead_id = ? AND assigned_to = ?');
+    $q->execute([$leadId, $userId]);
+    return (bool) $q->fetchColumn();
+}
+
 // AJAX/POST actions
 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
     header('Content-Type: application/json');
     
-    // Add new lead
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_lead') {
-        $newLead = $_POST['lead'];
-        if (empty($newLead['name']) || empty($newLead['contact']) || empty($newLead['product'])) {
-            echo json_encode(['success' => false, 'message' => 'All fields are required']); exit;
-        }
-        $stmt = $conn->prepare("INSERT INTO leads (name, contact, product, quantity, status, response, remarks, added_on, modified, added_by, assigned_to) VALUES (?, ?, ?, ?, 'new', NULL, NULL, NOW(), NOW(), ?, ?)");
-        $stmt->execute([
-            $newLead['name'] ?? '',
-            $newLead['contact'] ?? '',
-            $newLead['product'] ?? '',
-            $newLead['quantity'] ?? 1,
-            $user_id,
-            $user_id
-        ]);
-        echo json_encode(['success' => true, 'message' => 'Lead added successfully']); exit;
-    }
 
     // Update lead
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_lead') {
@@ -113,16 +103,9 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQ
             $id,
             $user_id
         ]);
-        echo json_encode(['success' => true, 'message' => 'Lead updated successfully']); exit;
+        echo json_encode($stmt->rowCount() > 0 || $stmt->errorCode() === '00000' && crm_owns_lead($conn, $id, $user_id) ? ['success' => true, 'message' => 'Lead updated successfully'] : ['success' => false, 'message' => 'Lead not found']); exit;
     }
 
-    // Delete lead
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_lead') {
-        $id = intval(ltrim($_POST['lead_id'], 'L'));
-        $stmt = $conn->prepare("DELETE FROM leads WHERE lead_id=? AND assigned_to=?");
-        $stmt->execute([$id, $user_id]);
-        echo json_encode(['success' => true, 'message' => 'Lead deleted successfully']); exit;
-    }
 
     // Update remarks
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_remarks') {
@@ -133,33 +116,40 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQ
             $id,
             $user_id
         ]);
-        echo json_encode(['success' => true, 'message' => 'Remarks updated successfully']); exit;
+        echo json_encode($stmt->rowCount() > 0 || $stmt->errorCode() === '00000' && crm_owns_lead($conn, $id, $user_id) ? ['success' => true, 'message' => 'Remarks updated successfully'] : ['success' => false, 'message' => 'Lead not found']); exit;
     }
 
     // Update status
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_status') {
         $id = intval(ltrim($_POST['lead_id'], 'L'));
-        $status = $_POST['status'] ?? '';
+        $status = strtolower(trim((string) ($_POST['status'] ?? '')));
+        if (!in_array($status, ['new', 'connected', 'not connected', 'confused', 'closed'], true)) {
+            echo json_encode(['success' => false, 'message' => 'Unknown status']); exit;
+        }
         $stmt = $conn->prepare("UPDATE leads SET status=?, modified=NOW() WHERE lead_id=? AND assigned_to=?");
         $stmt->execute([
             $status,
             $id,
             $user_id
         ]);
-        echo json_encode(['success' => true, 'message' => 'Status updated successfully']); exit;
+        echo json_encode($stmt->rowCount() > 0 || $stmt->errorCode() === '00000' && crm_owns_lead($conn, $id, $user_id) ? ['success' => true, 'message' => 'Status updated successfully'] : ['success' => false, 'message' => 'Lead not found']); exit;
     }
 
     // Update response
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_response') {
         $id = intval(ltrim($_POST['lead_id'], 'L'));
-        $response = $_POST['response'] ?? '';
+        $response = strtolower(trim((string) ($_POST['response'] ?? '')));
+        if ($response !== '' && !in_array($response, ['positive', 'negative'], true)) {
+            echo json_encode(['success' => false, 'message' => 'Unknown response']); exit;
+        }
+        $response = $response ?: null;
         $stmt = $conn->prepare("UPDATE leads SET response=?, modified=NOW() WHERE lead_id=? AND assigned_to=?");
         $stmt->execute([
             $response,
             $id,
             $user_id
         ]);
-        echo json_encode(['success' => true, 'message' => 'Response updated successfully']); exit;
+        echo json_encode($stmt->rowCount() > 0 || $stmt->errorCode() === '00000' && crm_owns_lead($conn, $id, $user_id) ? ['success' => true, 'message' => 'Response updated successfully'] : ['success' => false, 'message' => 'Lead not found']); exit;
     }
 
     // Pagination GET

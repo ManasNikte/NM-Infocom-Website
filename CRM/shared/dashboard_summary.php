@@ -72,7 +72,7 @@ try {
         $totals['contacts_pending'] = $scalar("SELECT COUNT(*) FROM contact_submits WHERE LOWER(status) = 'pending'");
         $totals['contacts_total'] = $scalar('SELECT COUNT(*) FROM contact_submits');
         $totals['reviews_private'] = $scalar("SELECT COUNT(*) FROM reviews WHERE reviewer_status = 'private'");
-        $totals['subscribers'] = $scalar('SELECT COUNT(*) FROM newsletter_subscribers');
+        $totals['subscribers'] = $scalar("SELECT COUNT(*) FROM newsletter_subscribers WHERE status = 'subscribed'");
         $totals['enquiries'] = $scalar('SELECT COALESCE(SUM(enquiries_count), 0) FROM products');
         $totals['products'] = $scalar('SELECT COUNT(*) FROM products');
     }

@@ -245,22 +245,6 @@
 }
 </style>
 
-<script src="../../vendor/jquery-3.2.1.min.js"></script>
-<!-- Bootstrap JS-->
-<script src="../../vendor/bootstrap-4.1/popper.min.js"></script>
-<script src="../../vendor/bootstrap-4.1/bootstrap.min.js"></script>
-<!-- Vendor JS       -->
-<script src="../../vendor/slick/slick.min.js"></script>
-<script src="../../vendor/wow/wow.min.js"></script>
-<script src="../../vendor/animsition/animsition.min.js"></script>
-<script src="../../vendor/bootstrap-progressbar/bootstrap-progressbar.min.js"></script>
-<script src="../../vendor/counter-up/jquery.waypoints.min.js"></script>
-<script src="../../vendor/counter-up/jquery.counterup.min.js"></script>
-<script src="../../vendor/circle-progress/circle-progress.min.js"></script>
-<script src="../../vendor/perfect-scrollbar/perfect-scrollbar.js"></script>
-<script src="../../vendor/chartjs/Chart.bundle.min.js"></script>
-<script src="../../vendor/select2/select2.min.js"></script>
-<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
 
 <script>
 let currentPage = 1;
@@ -269,6 +253,7 @@ let currentStatus = '';
 
 // Function to load table data
 function loadTableData(page = 1) {
+    loadTableData.lastArgs = arguments;
     currentPage = page;
     const searchTerm = document.getElementById('searchBar').value;
     currentStatus = document.getElementById('status-filter').value;
@@ -318,6 +303,7 @@ function loadTableData(page = 1) {
             tableBody.innerHTML = '<tr><td colspan="11" class="text-center text-danger py-4">Network error. Please check your connection.</td></tr>';
         });
 }
+crmLiveRefresh(function () { loadTableData.apply(null, loadTableData.lastArgs || []); }); // keep current without polling
 
 // Function to render table
 function renderTable(submits, totalItems, currentPage, rowsPerPage) {
@@ -497,87 +483,35 @@ document.getElementById('status-filter').addEventListener('change', function() {
 // Function to handle response button click
 function handleResponseClick(button) {
     const submissionId = button.getAttribute('data-id');
-    
-    // Check if SweetAlert is loaded
-    if (typeof swal !== 'function') {
-        alert('SweetAlert (swal) is not loaded. Please check the script include.');
-        return;
-    }
-    // Show a SweetAlert prompt for the response message
-    swal({
-        title: 'Respond to Submission',
-        text: 'Enter your response to this submission:',
-        content: {
-            element: 'input',
-            attributes: {
-                placeholder: 'Type your response here...',
-                type: 'textarea',
-                rows: 5,
-                style: 'width: 100%',
-            },
-        },
-        buttons: {
-            cancel: 'Cancel',
-            confirm: {
-                text: 'Submit Response',
-                closeModal: false
-            }
-        },
-        closeOnClickOutside: false,
-        closeOnEsc: false,
-    })
-    .then((value) => {
-        if (value === null || value === '') {
-            swal.stopLoading();
-            swal.close();
-            return;
-        }
-        
-        const responseMessage = value.trim();
-        if (!responseMessage) {
-            swal('Validation Error', 'Please enter a response message', 'warning');
-            return false; // Keep the modal open
-        }
-        // Show loading state in SweetAlert
-        swal({
-            title: 'Submitting...',
-            text: 'Please wait while we save your response',
-            buttons: false,
-            closeOnClickOutside: false,
-            closeOnEsc: false,
-        });
-        
-        // Disable button and show loading state
-        button.disabled = true;
-        button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Responding...';
-        
-        // Send AJAX request to update the submission
-        fetch('./data/update_submission_response.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `id=${encodeURIComponent(submissionId)}&response=${encodeURIComponent(responseMessage)}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Show success message
-                swal('Success', 'Response submitted successfully!', 'success');
-                // Reload the table to show updated status
-                loadTableData(currentPage);
-            } else {
-                throw new Error(data.message || 'Failed to submit response');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            swal('Error', error.message, 'error');
-            button.disabled = false;
-            button.innerHTML = '<i class="fa fa-reply"></i> Respond';
-        });
+    Swal.fire({
+        title: 'Record your reply',
+        input: 'textarea',
+        inputLabel: 'What did you tell the customer? (Saved with the message; not emailed.)',
+        inputPlaceholder: 'e.g. Called on 30 Oct, sent the quotation by email',
+        inputAttributes: { rows: 5, maxlength: 2000 },
+        inputValidator: (v) => (v && v.trim() ? undefined : 'Please enter your reply'),
+        showCancelButton: true,
+        confirmButtonText: 'Save reply',
+        showLoaderOnConfirm: true,
+        preConfirm: (value) => fetch('./data/update_submission_response.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `id=${encodeURIComponent(submissionId)}&response=${encodeURIComponent(value.trim())}`
+            })
+            .then((r) => r.json())
+            .then((data) => {
+                if (!data.success) throw new Error(data.message || 'Failed to save the reply');
+                return data;
+            })
+            .catch((e) => Swal.showValidationMessage(e.message)),
+        allowOutsideClick: () => !Swal.isLoading(),
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+        Swal.fire({ icon: 'success', title: 'Reply saved', timer: 1800, showConfirmButton: false });
+        loadTableData(currentPage);
     });
 }
+
 
 // Event delegation for response buttons
 document.addEventListener('click', (e) => {

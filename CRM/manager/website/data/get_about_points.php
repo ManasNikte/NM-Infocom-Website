@@ -42,14 +42,12 @@ try {
     echo json_encode([
         'success' => false,
         'message' => 'Database error occurred',
-        'debug' => $e->getMessage() // Remove this in production
     ]);
 } catch (Exception $e) {
     error_log("General Error: " . $e->getMessage());
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage(),
-        'debug' => $e->getTraceAsString() // Remove this in production
+        'message' => crm_public_error($e),
     ]);
 }

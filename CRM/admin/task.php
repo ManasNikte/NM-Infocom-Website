@@ -335,8 +335,6 @@ require_once './top.php';
 </div>
 
 <!-- Add SweetAlert2 for popups -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.css">
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
 
 <!-- JavaScript for Employee Task Table and Add Task -->
 <script>
@@ -360,6 +358,7 @@ let employeeTaskPage = 1;
 let employeeUserType = 'all';
 
 function fetchEmployeeTasks(page = 1) {
+    fetchEmployeeTasks.lastArgs = arguments;
     employeeTaskPage = page;
     const tableBody = document.getElementById('employeeTasksTableBody');
     tableBody.innerHTML = `<tr><td colspan="9" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div></td></tr>`;
@@ -410,6 +409,7 @@ function fetchEmployeeTasks(page = 1) {
             renderEmployeeTasksPagination({});
         });
 }
+crmLiveRefresh(function () { fetchEmployeeTasks.apply(null, fetchEmployeeTasks.lastArgs || []); }); // keep current without polling
 
 function renderEmployeeTasksPagination(pagination) {
     const info = document.getElementById('employeeTasksInfo');

@@ -889,7 +889,6 @@
 .badge-secondary { background: #6c757d; color: #fff; }
 </style>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 function truncateText(text, maxLength = 24) {
     if (!text) return '';
@@ -903,12 +902,12 @@ function renderApplicantRow(applicant, idx) {
         <tr class="tr-shadow ${rowClass}">
             <td class="text-center">${esc(applicant.id)}</td>
             <td class="text-center">${esc(applicant.job_id ?? '')}</td>
-            <td class="text-center" title="${esc(applicant.full_name)}">${truncateText(applicant.full_name, 18)}</td>
-            <td class="text-center" title="${esc(applicant.email)}">${truncateText(applicant.email, 18)}</td>
-            <td class="text-center">${truncateText(applicant.contact, 14)}</td>
-            <td class="text-center" title="${esc(applicant.location)}">${truncateText(applicant.location, 14)}</td>
+            <td class="text-center" title="${esc(applicant.full_name)}">${esc(truncateText(applicant.full_name, 18))}</td>
+            <td class="text-center" title="${esc(applicant.email)}">${esc(truncateText(applicant.email, 18))}</td>
+            <td class="text-center">${esc(truncateText(applicant.contact, 14))}</td>
+            <td class="text-center" title="${esc(applicant.location)}">${esc(truncateText(applicant.location, 14))}</td>
             <td class="text-center">
-                <a href="#" class="btn btn-sm btn-outline-primary view-pdf-btn" data-pdf="${pdfPath}">View PDF</a>
+                <a href="#" class="btn btn-sm btn-outline-primary view-pdf-btn" data-pdf="${esc(pdfPath)}">View PDF</a>
             </td>
             <td class="text-center">
                 <span class="badge badge-${esc(applicant.status === 'Shortlisted' ? 'success' : applicant.status === 'Rejected' ? 'danger' : 'secondary')}">${esc(applicant.status)}</span>
@@ -939,6 +938,7 @@ function renderApplicantsPagination(pagination) {
     }
 }
 function loadJobApplicants(page = 1) {
+    loadJobApplicants.lastArgs = arguments;
     showApplicantsLoading();
     $.ajax({
         url: 'data/job_applicants_data.php?page=' + page,
@@ -961,6 +961,7 @@ function loadJobApplicants(page = 1) {
         }
     });
 }
+crmLiveRefresh(function () { loadJobApplicants.apply(null, loadJobApplicants.lastArgs || []); }); // keep current without polling
 $(function() {
     loadJobApplicants();
     $('#applicantsPagination').on('click', 'a.page-link', function(e) {
@@ -986,7 +987,7 @@ $(document).off('click', '.view-pdf-btn').on('click', '.view-pdf-btn', function(
     if (pdfUrl && pdfUrl !== '-') {
         Swal.fire({
             title: 'Resume PDF',
-            html: `<iframe src='${pdfUrl}' width='100%' height='500px' style='border:none;'></iframe>`,
+            html: `<iframe src='${esc(pdfUrl)}' width='100%' height='500px' style='border:none;'></iframe>`,
             width: 700,
             showCloseButton: true,
             showConfirmButton: false,
@@ -1077,15 +1078,15 @@ $(document).ready(function() {
                 <td class="text-center">${esc(career.type)}</td>
                 <td class="text-center">${esc(career.location)}</td>
                 <td class="text-center">${esc(career.salary)}</td>
-                <td class="text-center">${truncateWords(career.description)}</td>
-                <td class="text-center">${truncateWords(career.skills)}</td>
+                <td class="text-center">${esc(truncateWords(career.description))}</td>
+                <td class="text-center">${esc(truncateWords(career.skills))}</td>
                 <td class="text-center"><i class="${esc(career.icon)}"></i></td>
                 <td class="text-center">${esc(career.date_posted)}</td>
                 <td class="text-center">${esc(career.deadline)}</td>
                 <td class="text-center">${esc(career.experience)}</td>
                 <td class="text-center">${esc(career.education)}</td>
-                <td class="text-center">${truncateWords(career.responsibilities)}</td>
-                <td class="text-center">${truncateWords(career.requirements)}</td>
+                <td class="text-center">${esc(truncateWords(career.responsibilities))}</td>
+                <td class="text-center">${esc(truncateWords(career.requirements))}</td>
                 <td class="text-center">${esc(career.date_added)}</td>
                 <td class="text-center">${esc(career.last_modified)}</td>
                 <td class="text-center">
@@ -1139,6 +1140,7 @@ $(document).ready(function() {
 
     // Function to load page data
     function loadPage(page) {
+        loadPage.lastArgs = arguments;
         $.ajax({
             url: `data/career_data.php?page=${page}&rowsPerPage=${rowsPerPage}`,
             method: 'GET',
@@ -1157,6 +1159,7 @@ $(document).ready(function() {
             }
         });
     }
+    crmLiveRefresh(function () { loadPage.apply(null, loadPage.lastArgs || []); }); // keep current without polling
 
     // Initialize the page on load
     loadPage(currentPage);
@@ -1177,7 +1180,7 @@ $(document).ready(function() {
         let formHtml = `
 <form id="add-job-form" class="modern-job-form">
   <div class="form-section">
-    <div class="section-title"><i class="bi bi-briefcase"></i> Basic Info</div>
+    <div class="section-title"><i class="fas fa-briefcase"></i> Basic Info</div>
     <div class="form-grid">
       <div class="form-group">
         <label>Title</label>
@@ -1219,7 +1222,7 @@ $(document).ready(function() {
     </div>
   </div>
   <div class="form-section">
-    <div class="section-title"><i class="bi bi-calendar"></i> Dates</div>
+    <div class="section-title"><i class="far fa-calendar"></i> Dates</div>
     <div class="form-grid">
       <div class="form-group">
         <label>Deadline</label>
@@ -1236,7 +1239,7 @@ $(document).ready(function() {
     </div>
   </div>
   <div class="form-section">
-    <div class="section-title"><i class="bi bi-file-text"></i> Details</div>
+    <div class="section-title"><i class="far fa-file-alt"></i> Details</div>
     <div class="form-grid">
       <div class="form-group">
         <label>Description</label>
@@ -1408,7 +1411,7 @@ function editCareer(id) {
         let formHtml = `
 <form id="edit-job-form" class="modern-job-form">
   <div class="form-section">
-    <div class="section-title"><i class="bi bi-briefcase"></i> Basic Info</div>
+    <div class="section-title"><i class="fas fa-briefcase"></i> Basic Info</div>
     <div class="form-grid">
       <div class="form-group">
         <label>Title</label>
@@ -1437,7 +1440,7 @@ function editCareer(id) {
     </div>
   </div>
   <div class="form-section">
-    <div class="section-title"><i class="bi bi-calendar"></i> Dates</div>
+    <div class="section-title"><i class="far fa-calendar"></i> Dates</div>
     <div class="form-grid">
       <div class="form-group">
         <label>Date Posted</label>
@@ -1458,7 +1461,7 @@ function editCareer(id) {
     </div>
   </div>
   <div class="form-section">
-    <div class="section-title"><i class="bi bi-file-text"></i> Details</div>
+    <div class="section-title"><i class="far fa-file-alt"></i> Details</div>
     <div class="form-grid">
       <div class="form-group">
         <label>Description</label>

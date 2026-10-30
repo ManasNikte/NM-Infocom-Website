@@ -580,32 +580,37 @@ require_once './top.php';
 </div>
 
 <!-- Add necessary JavaScript -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Chart data; re-run by crmLiveRefresh when the tab comes back or another tab saves a change.
+        function crmLoadCharts() {
 
         
-        // Load pie chart data
-        fetch('../../shared/task_status.php')
-            .then(response => response.json())
-            .then(data => {
-                initPieChart(data);
-            });
+            // Load pie chart data
+            fetch('../../shared/task_status.php')
+                .then(response => response.json())
+                .then(data => {
+                    initPieChart(data);
+                });
         
-        // Load pie chart data for Manager Tasks
-        fetch('../../shared/task_status.php?mine=1')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${esc(response.status)}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Received data:', data);
-                initPieChartManager('managerTaskChart', data);
-            })
-            .catch(error => console.error('Error fetching data:', error));
+            // Load pie chart data for Manager Tasks
+            fetch('../../shared/task_status.php?mine=1')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${esc(response.status)}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Received data:', data);
+                    initPieChartManager('managerTaskChart', data);
+                })
+                .catch(error => console.error('Error fetching data:', error));
 
+
+        }
+        crmLoadCharts();
+        crmLiveRefresh(crmLoadCharts);
 
         function initPieChart(data) {
             const taskStatusCtx = document.getElementById('taskStatusChart').getContext('2d');
@@ -1204,6 +1209,11 @@ document.getElementById('clearEmployeeTaskSearch').addEventListener('click', fun
 
 // Call on page load
 fetchEmployeeTasks();
+// Keep both task tables current without polling.
+crmLiveRefresh(function () {
+    fetchTasks(currentPage, currentSearch, currentStatus);
+    fetchEmployeeTasks(employeeTaskPage);
+});
 
 document.getElementById('assignTaskBtn').addEventListener('click', function () {
     crmAssignTask({ base: '../../', assignUrl: '../../shared/assign_task.php', onDone: function () { fetchEmployeeTasks(); } });

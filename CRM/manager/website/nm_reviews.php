@@ -1,6 +1,5 @@
 <?php require_once './top.php'; ?>
 <!-- Add SweetAlert2 JS -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
       <!-- MAIN CONTENT-->
       <div class="main-content">
         <div class="section__content section__content--p30">
@@ -489,7 +488,7 @@
 
 <script>
 let currentPage = 1;
-const rowsPerPage = 5;
+let rowsPerPage = 5;
 let pollingInterval;
 
 // Function to load table data
@@ -511,13 +510,13 @@ function loadTableData(page = 1) {
                 updateShowingEntries(data.pagination);
             } else {
                 console.error('Error:', data.error);
-                swal('Error', data.error?.message || 'Unknown error', 'error');
+                Swal.fire('Error', data.error?.message || 'Unknown error', 'error');
             }
         })
         .catch(error => {
             tableContainer.classList.remove('loading');
             console.error('Error loading data:', error);
-            swal('Error', 'Error loading data. Please try again.', 'error');
+            Swal.fire('Error', 'Error loading data. Please try again.', 'error');
         });
 }
 
@@ -556,7 +555,7 @@ function showReviewDetails(review) {
                 <p><strong>Email:</strong> ${esc(review.reviewer_email)}</p>
                 <p><strong>Contact:</strong> ${esc(review.reviewer_contact || 'N/A')}</p>
                 <p><strong>Designation:</strong> ${esc(review.reviewer_designation || 'N/A')}</p>
-                <p><strong>Rating:</strong> ${esc('★'.repeat(review.rating))}${esc('☆'.repeat(5 - review.rating))}</p>
+                <p><strong>Rating:</strong> ${'★'.repeat(Math.max(0, Math.min(5, +review.reviewer_rating || 0)))}${'☆'.repeat(5 - Math.max(0, Math.min(5, +review.reviewer_rating || 0)))}</p>
                 <p><strong>Status:</strong> 
                     <select id="reviewStatus" class="form-control mt-2">
                         ${optionsHtml}
@@ -565,7 +564,7 @@ function showReviewDetails(review) {
                 <div class="form-group mt-3">
                     <label class="font-weight-bold">Review:</label>
                     <div class="border p-2 rounded" style="max-height: 200px; overflow-y: auto;">
-                        ${review.review_text.replace(/\n/g, '<br>')}
+                        ${esc(review.review_text || '').replace(/\n/g, '<br>')}
                     </div>
                 </div>
             </div>
@@ -645,7 +644,7 @@ function confirmDeleteReview(reviewId, reviewName) {
     
     Swal.fire({
         title: 'Delete Review',
-        html: `Are you sure you want to delete the review by <strong>${reviewName}</strong>?`,
+        html: `Are you sure you want to delete the review by <strong>${esc(reviewName)}</strong>?`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
@@ -727,7 +726,9 @@ function populateTable(reviews) {
         return;
     }
 
+    window.crmReviews = {};
     reviews.forEach(review => {
+        window.crmReviews[+(review.id || review.review_id)] = review;
         const row = document.createElement('tr');
         const rating = review.reviewer_rating || 0;
         const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
@@ -742,8 +743,8 @@ function populateTable(reviews) {
             <td><span class="text-muted">${esc(review.reviewer_designation || 'N/A')}</span></td>
             <td><span class="rating-stars" title="${rating}/5 stars">${stars}</span></td>
             <td>
-                <div class="review-text" title="${reviewText}">
-                    ${truncatedText}
+                <div class="review-text" title="${esc(reviewText)}">
+                    ${esc(truncatedText)}
                 </div>
             </td>
             <td><small class="text-muted">${esc(new Date(review.created_at || review.reviewer_date || '').toLocaleDateString())}</small></td>
@@ -752,12 +753,12 @@ function populateTable(reviews) {
                 <div class="btn-group" role="group">
                     <button type="button" class="btn btn-sm ${esc(review.reviewer_status === 'public' ? 'btn-success' : 'btn-warning')}" 
                             title="View Details" 
-                            onclick="event.stopPropagation(); showReviewDetails(${JSON.stringify(review).replace(/"/g, '&quot;')})">
+                            onclick="event.stopPropagation(); showReviewDetails(window.crmReviews[${esc(+(review.id || review.review_id))}])">
                         <i class="zmdi zmdi-eye"></i>
                     </button>
                     <button type="button" class="btn btn-sm btn-danger" 
                             title="Delete Review" 
-                            onclick="event.stopPropagation(); confirmDeleteReview(${esc(review.id || review.review_id)}, '${esc((review.reviewer_name || 'this review').replace(/'/g, "\\'"))}')">
+                            onclick="event.stopPropagation(); confirmDeleteReview(${esc(+(review.id || review.review_id))}, (window.crmReviews[${esc(+(review.id || review.review_id))}] || {}).reviewer_name || 'this review')">
                         <i class="zmdi zmdi-delete"></i>
                     </button>
                 </div>
@@ -835,12 +836,12 @@ function changePage(page) {
     loadTableData(page);
 }
 
-// Function to start polling
+// Keep the table current (crmLiveRefresh)
 function startPolling() {
     loadTableData(currentPage);
-    pollingInterval = setInterval(() => {
+    pollingInterval = crmLiveRefresh(() => {
         loadTableData(currentPage);
-    }, 3000);
+    });
 }
 
 // Function to search reviews
@@ -869,13 +870,13 @@ function filterByStatus(status) {
                 updateShowingEntries(data.pagination);
             } else {
                 console.error('Error:', data.error);
-                swal('Error', data.error?.message || 'Unknown error', 'error');
+                Swal.fire('Error', data.error?.message || 'Unknown error', 'error');
             }
         })
         .catch(error => {
             tableContainer.classList.remove('loading');
             console.error('Error loading data:', error);
-            swal('Error', 'Error loading data. Please try again.', 'error');
+            Swal.fire('Error', 'Error loading data. Please try again.', 'error');
         });
 }
 
@@ -889,78 +890,12 @@ function changeRowsPerPage(rows) {
 // Function to refresh data
 function refreshData() {
     loadTableData(currentPage);
-    swal('Data refreshed!', 'Data refreshed successfully!', 'success');
+    Swal.fire('Data refreshed!', 'Data refreshed successfully!', 'success');
 }
 
-// Function to toggle review status (eye icon)
-function toggleReviewStatus(id) {
-    swal({
-        title: 'Change Review Visibility?',
-        text: 'Do you want to toggle the visibility status of this review?',
-        icon: 'info',
-        buttons: true,
-        dangerMode: false,
-    }).then((willToggle) => {
-        if (willToggle) {
-            const formData = new FormData();
-            formData.append('action', 'toggle_status');
-            formData.append('review_id', id);
-            fetch('./data/nm_reviews_data.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    swal('Status updated!', `Status changed: ${esc(data.old_status)} → ${esc(data.new_status)}`, 'success');
-                    loadTableData(currentPage);
-                } else {
-                    swal('Error', data.message || 'Failed to update status', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                swal('Error', 'Error updating status. Please try again.', 'error');
-            });
-        }
-    });
-}
 
-// Function to delete review
-function deleteReview(id) {
-    swal({
-        title: 'Are you sure?',
-        text: 'This review will be permanently deleted. This action cannot be undone.',
-        icon: 'warning',
-        buttons: true,
-        dangerMode: true,
-    }).then((willDelete) => {
-        if (willDelete) {
-            const formData = new FormData();
-            formData.append('action', 'delete');
-            formData.append('review_id', id);
-            fetch('./data/nm_reviews_data.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    swal('Deleted!', 'Review deleted successfully.', 'success');
-                    loadTableData(currentPage);
-                } else {
-                    swal('Error', data.message || 'Failed to delete review', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                swal('Error', 'Error deleting review. Please try again.', 'error');
-            });
-        }
-    });
-}
 
-// Start polling when the page loads
+// Load the table, then keep it current (crmLiveRefresh)
 document.addEventListener('DOMContentLoaded', () => {
     startPolling();
 });

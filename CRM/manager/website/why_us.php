@@ -10,6 +10,7 @@
                   <div class="card-header">
                     <h3 class="text-primary">Why Choose Us Cards Management</h3>
                     <small class="text-muted">Manage why us cards</small>
+                    <button type="button" class="btn btn-primary btn-sm ml-auto" onclick="crmAddContent()"><i class="fas fa-plus mr-1"></i> Add card</button>
                   </div>
                   <div class="card-body">
                     <div class="table-responsive table-responsive-data2">
@@ -242,6 +243,7 @@ function renderTable(whyUsData) {
                 <td>${esc(item.whyus_description)}</td>
                 <td class="text-center">
                     <button class="btn btn-primary btn-sm btn-custom" onclick="editWhyUs(${esc(item.whyus_id)})">Edit</button>
+                    <button class="btn btn-danger btn-sm btn-custom" onclick="deleteWhyUs(${esc(item.whyus_id)})">Delete</button>
                 </td>
             </tr>
             <tr class='spacer'></tr>
@@ -250,54 +252,50 @@ function renderTable(whyUsData) {
     });
 }
 
-// Function to start polling
+// Keep the table current (crmLiveRefresh)
 function startPolling() {
     loadTableData(currentPage);
-    pollingInterval = setInterval(() => {
+    pollingInterval = crmLiveRefresh(() => {
         loadTableData(currentPage);
-    }, 3000);
+    });
 }
 
-// Function to handle edit action
-function editWhyUs(id) {
-    const item = (window.allWhyUsData || []).find(i => i.whyus_id == id);
-    let html = '';
-    if (item) {
-        html += `<li class='list-group-item'><strong>ID:</strong> ${esc(item.whyus_id)}</li>`;
-        setTimeout(function() {
-            document.getElementById('editWhyUsTitle').value = item.whyus_title;
-            document.getElementById('editWhyUsCardNumber').value = item.whyus_card_number;
-            document.getElementById('editWhyUsDescription').value = item.whyus_description;
-            document.getElementById('editWhyUsForm').setAttribute('data-id', item.whyus_id);
-        }, 200);
-    } else {
-        html = `<li class='list-group-item'>No data found for this entry.</li>`;
-        setTimeout(function() {
-            document.getElementById('editWhyUsTitle').value = '';
-            document.getElementById('editWhyUsCardNumber').value = '';
-            document.getElementById('editWhyUsDescription').value = '';
-            document.getElementById('editWhyUsForm').removeAttribute('data-id');
-        }, 200);
-    }
-    document.getElementById('whyUsDetailsList').innerHTML = html;
-    $('#editWhyUsModal').modal('show');
-}
 
 // Handle form submission (demo only)
 document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('editWhyUsForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const whyusId = this.getAttribute('data-id');
-    const title = document.getElementById('editWhyUsTitle').value;
-    const cardNumber = document.getElementById('editWhyUsCardNumber').value;
-    const description = document.getElementById('editWhyUsDescription').value;
-    alert('Submitted!\nID: ' + whyusId + '\nTitle: ' + title + '\nCard Number: ' + cardNumber + '\nDescription: ' + description + '\n(Demo only, not saved)');
-    $('#editWhyUsModal').modal('hide');
-  });
 });
 
-// Start polling when the page loads
+// Load the table, then keep it current (crmLiveRefresh)
 document.addEventListener('DOMContentLoaded', () => {
     startPolling();
 });
+</script>
+
+<script>
+// Real create / edit / delete (data/content_admin.php); replaces the old demo-only handlers.
+(function () {
+  const resource = "why_us", pk = "whyus_id", noun = "card", labelField = "whyus_title";
+  const fields = [{"label": "Card number", "name": "whyus_card_number", "type": "text", "required": true, "placeholder": "e.g. 01"}, {"label": "Title", "name": "whyus_title", "type": "text", "required": true}, {"label": "Description", "name": "whyus_description", "type": "textarea", "required": true, "rows": 4}];
+  const image = null;
+  let rows = {};
+  const baseRender = window.renderTable;
+  window.renderTable = function (list) {
+    rows = {};
+    (list || []).forEach((r) => { rows[r[pk]] = r; });
+    return baseRender.apply(this, arguments);
+  };
+  const reload = () => (typeof loadTableData === 'function' ? loadTableData(typeof currentPage !== 'undefined' ? currentPage : 1) : location.reload());
+  const imageOpts = (rec) => image && { label: image.label, required: image.required, current: rec && rec[image.field] ? '../../../' + rec[image.field].replace(/^\.?\//, '') : '' };
+  function edit(id) {
+    const rec = rows[id];
+    if (!rec) return Swal.fire({ icon: 'info', title: 'Refresh the page', text: 'This item was changed or removed.' });
+    crmContentEditor({ resource, title: 'Edit ' + noun, fields, image: imageOpts(rec), record: Object.assign({ __id: rec[pk] }, rec), onDone: reload });
+  }
+  window.crmAddContent = function () {
+    crmContentEditor({ resource, title: 'Add ' + noun, fields, image: imageOpts(null), record: null, onDone: reload });
+  };
+  window["editWhyUs"] = edit;
+  
+  window["deleteWhyUs"] = (id) => crmContentDelete({ resource, id, label: (rows[id] && rows[id][labelField]) || noun, onDone: reload });
+})();
 </script>

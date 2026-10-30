@@ -283,12 +283,12 @@ function changePage(page) {
     loadTableData(page);
 }
 
-// Function to start polling
+// Keep the table current (crmLiveRefresh)
 function startPolling() {
     loadTableData(currentPage);
-    pollingInterval = setInterval(() => {
+    pollingInterval = crmLiveRefresh(() => {
         loadTableData(currentPage);
-    }, 3000);
+    });
 }
 
 // Function to search enquiries
@@ -296,7 +296,7 @@ function searchEnquiries() {
     loadTableData(currentPage);
 }
 
-// Start polling when the page loads
+// Load the table, then keep it current (crmLiveRefresh)
 document.addEventListener('DOMContentLoaded', () => {
     startPolling();
 });

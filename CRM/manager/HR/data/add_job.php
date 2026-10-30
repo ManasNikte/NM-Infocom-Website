@@ -3,9 +3,6 @@ require_once __DIR__ . '/../../../config/auth.php';
 $auth = crm_require_api(['Admin', 'Manager'], 'hr');
 require_once __DIR__ . '/../../../../config/format.php';
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST');
-header('Access-Control-Allow-Headers: Content-Type');
 
 // Enable error reporting for debugging
 
@@ -107,9 +104,6 @@ function addJob($data) {
             $cleanData['date_posted'] = date('Y-m-d');
             
             // Debug: Log the skills data before processing
-            error_log("Skills data before processing: " . $cleanData['skills']);
-            error_log("Skills data length: " . strlen($cleanData['skills']));
-            error_log("Skills data bytes: " . bin2hex($cleanData['skills']));
             
             // Handle skills field more carefully
             $skills = $cleanData['skills'];
@@ -130,8 +124,6 @@ function addJob($data) {
                 $skills = substr($skills, 0, 4294967295);
             }
             
-            error_log("Skills data after processing: " . $skills);
-            error_log("Skills data length after: " . strlen($skills));
             
             // Ensure proper encoding for longtext fields
             $cleanData['skills'] = $skills;
@@ -211,11 +203,11 @@ function addJob($data) {
             } elseif (strpos($e->getMessage(), 'careers.category') !== false) {
                 throw new Exception("Category constraint violation. Please select a valid category.");
             } else {
-                throw new Exception("Data constraint violation: " . $e->getMessage());
+                throw new Exception("Data constraint violation: " . crm_public_error($e));
             }
         }
         
-        throw new Exception("Database error: " . $e->getMessage());
+        throw new Exception("Database error: " . crm_public_error($e));
     } catch (Exception $e) {
         error_log("General error: " . $e->getMessage());
         throw $e;
@@ -241,7 +233,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'error' => $e->getMessage()
+        'error' => crm_public_error($e)
     ]);
 }
 ?> 

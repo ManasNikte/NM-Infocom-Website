@@ -53,7 +53,7 @@ try {
     
 } catch (Exception $e) {
     http_response_code(400);
-    $response['message'] = 'Error: ' . $e->getMessage();
+    $response['message'] = crm_public_error($e);
     error_log('Error in update_submission_response.php: ' . $e->getMessage());
 }
 

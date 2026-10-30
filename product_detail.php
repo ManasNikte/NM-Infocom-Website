@@ -155,6 +155,7 @@ require "./components/top.php";
         <span class="close-modal">&times;</span>
         <h2>Product Enquiry</h2>
         <form id="enquiryForm" action="data/enquiry_sumbission.php" method="POST">
+            <div class="nm-hp" aria-hidden="true"><input type="text" name="website" tabindex="-1" autocomplete="off"></div>
             <!-- Product Details Section -->
             <div class="form-group">
                 <label for="product_name">Product Name</label>

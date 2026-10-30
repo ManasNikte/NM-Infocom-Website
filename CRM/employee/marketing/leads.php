@@ -306,7 +306,6 @@ require_once './data/leads_data.php';
 }
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
 <script>
 $(document).ready(function() {
     let pollingInterval;
@@ -320,7 +319,7 @@ $(document).ready(function() {
     function renderTableRow(lead) {
 
         function getStatusBadge(callStatus, response) {
-            if (callStatus === 'not_connected') {
+            if (callStatus === 'not connected' || callStatus === 'not_connected') {
                 return '<span class="status-badge status-not-connected">Not Connected</span>';
             }
             if(callStatus === 'pending') {
@@ -442,7 +441,7 @@ $(document).ready(function() {
                         if (searchTerm) params.set('search', searchTerm);
                         if (statusFilter) params.set('status', statusFilter);
                         if (dateFilter) params.set('date', dateFilter);
-                        window.history.pushState({}, '', `?${esc(params.toString())}`);
+                        window.history.pushState({}, '', '?' + params.toString());
                     }
                 } else {
                     $('#leadsTableBody').html(`
@@ -482,11 +481,11 @@ $(document).ready(function() {
         });
     }
 
-    // Function to start polling
+    // Keep the table current (crmLiveRefresh)
     function startPolling() {
-        pollingInterval = setInterval(function() {
+        pollingInterval = crmLiveRefresh(function() {
             loadPage(currentPage, true);
-        }, 3000);
+        });
     }
 
     // Function to pause polling
@@ -527,7 +526,7 @@ $(document).ready(function() {
     initTooltips();
     initStatusDropdowns();
 
-    // Start polling
+    // Keep the table current (crmLiveRefresh)
     startPolling();
 
     // Add loading animation styles
@@ -674,11 +673,11 @@ $(document).ready(function() {
         Swal.fire({
             title: 'Edit Lead',
             html: `
-                <input type="text" id="swalEditLeadName" class="swal2-input" placeholder="Lead Name" value="${leadName}" required>
-                <input type="tel" id="swalEditLeadContact" class="swal2-input" placeholder="Contact Number" pattern="[0-9]{10}" maxlength="10" value="${leadContact}" required>
-                <input type="email" id="swalEditLeadEmail" class="swal2-input" placeholder="Email" value="${leadEmail}" required>
-                <input type="text" id="swalEditLeadProduct" class="swal2-input" placeholder="Interested Product" value="${leadProduct}" required>
-                <input type="number" id="swalEditLeadQuantity" class="swal2-input" placeholder="Quantity" value="${leadQuantity}" required>
+                <input type="text" id="swalEditLeadName" class="swal2-input" placeholder="Lead Name" value="${esc(leadName)}" required>
+                <input type="tel" id="swalEditLeadContact" class="swal2-input" placeholder="Contact Number" pattern="[0-9]{10}" maxlength="10" value="${esc(leadContact)}" required>
+                <input type="email" id="swalEditLeadEmail" class="swal2-input" placeholder="Email" value="${esc(leadEmail)}" required>
+                <input type="text" id="swalEditLeadProduct" class="swal2-input" placeholder="Interested Product" value="${esc(leadProduct)}" required>
+                <input type="number" id="swalEditLeadQuantity" class="swal2-input" placeholder="Quantity" value="${esc(leadQuantity)}" required>
             `,
             focusConfirm: false,
             showCancelButton: true,

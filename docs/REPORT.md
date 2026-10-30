@@ -209,7 +209,7 @@ images, orphaned event uploads and a 1.9 MB unused graphic were deleted.
 6. When HTTPS-only, enable the HSTS header in `.htaccess`.
 
 ## 7. Known limitations and follow-ups
-- The WitJab pages use a separate `witjab` database that wasn't available, so they were secured but not functionally tested.
+- The WitJab pages (a separate website and database) have since been removed from the CRM.
 - `firebase/php-jwt` v6 has a low-severity advisory about weak keys; mitigated by the 32-character minimum. Upgrading to v7 is recommended.
 - Content to review: test reviews on the homepage, expired job openings, placeholder social links (currently hidden),
   product photos for the new catalogue.

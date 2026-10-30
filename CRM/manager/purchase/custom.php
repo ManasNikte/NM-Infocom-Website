@@ -400,8 +400,6 @@
         </script>
 
         <!-- Add SweetAlert2 for better alerts -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.css">
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
 <?php require './bottom.php'; ?>
 
 

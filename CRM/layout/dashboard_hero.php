@@ -69,12 +69,13 @@ if ($heroDept === 'website') {
   <?php endforeach; ?>
 </div>
 <script>
-  // Fill the KPI tiles; counts animate up from zero.
-  document.addEventListener('DOMContentLoaded', function () {
+  // Fill the KPI tiles (counts animate up); refreshed by crmLiveRefresh instead of polling.
+  function crmLoadSummary() {
     fetch('<?= $crm ?>shared/dashboard_summary.php', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (data) {
         if (!data.success) throw new Error(data.message);
+        document.getElementById('crmSummaryError').classList.add('d-none');
         document.querySelectorAll('#crmSummary [data-summary]').forEach(function (el) {
           var target = Number(data.totals[el.getAttribute('data-summary')] || 0), suffix = el.getAttribute('data-suffix') || '';
           var start = performance.now(), dur = 700;
@@ -90,5 +91,9 @@ if ($heroDept === 'website') {
         box.textContent = 'Could not load the summary numbers. ' + (e && e.message ? e.message : '');
         box.classList.remove('d-none');
       });
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    crmLoadSummary();
+    crmLiveRefresh(crmLoadSummary);
   });
 </script>

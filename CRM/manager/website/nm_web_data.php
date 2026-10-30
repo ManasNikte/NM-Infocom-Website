@@ -208,7 +208,7 @@
                     </div>
 
                     <div class="section">
-                      <div class="row" onClick="window.location.href = './reviews.php';" style="cursor: pointer;">
+                      <div class="row" onClick="window.location.href = './nm_reviews.php';" style="cursor: pointer;">
                         <div class="col-md-8">
                           <div class="section-title">Reviews</div>
                         </div>
@@ -262,6 +262,7 @@
 <script>
 // Function to load data counts
 function loadDataCounts() {
+    loadDataCounts.lastArgs = arguments;
     fetch('./data/nm_web_data_counts.php')
         .then(response => {
             return response.text(); // Get raw text first
@@ -281,6 +282,7 @@ function loadDataCounts() {
             document.getElementById('errorMessage').textContent = 'Error loading data';
         });
 }
+crmLiveRefresh(function () { loadDataCounts.apply(null, loadDataCounts.lastArgs || []); }); // keep current without polling
 
 // Function to render data counts
 function renderDataCounts(counts) {
@@ -310,12 +312,14 @@ function renderDataCounts(counts) {
 
 // Function to load statistics
 function loadStatistics() {
+    loadStatistics.lastArgs = arguments;
     fetch('./data/nm_web_data_stats.php')
         .then(response => response.json())
         .then(data => {
             renderStatistics(data);
         })
 }
+crmLiveRefresh(function () { loadStatistics.apply(null, loadStatistics.lastArgs || []); }); // keep current without polling
 
 // Function to render statistics
 function renderStatistics(stats) {

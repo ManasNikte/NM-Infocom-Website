@@ -40,19 +40,19 @@ try {
 
     foreach ($months as $ym) {
         // New
-        $stmt = $conn->prepare("SELECT COUNT(*) FROM leads WHERE DATE_FORMAT(added_on, '%Y-%m') = ? AND status = 'new' AND added_on >= ? AND added_on <= ?");
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM leads WHERE DATE_FORMAT(added_on, '%Y-%m') = ? AND status = 'new' AND DATE(added_on) >= ? AND DATE(added_on) <= ?");
         $stmt->execute([$ym, $startDate, $endDate]);
         $new[] = (int)$stmt->fetchColumn();
         // In Progress
-        $stmt = $conn->prepare("SELECT COUNT(*) FROM leads WHERE DATE_FORMAT(added_on, '%Y-%m') = ? AND (status = 'connected' OR status = 'not connected') AND added_on >= ? AND added_on <= ?");
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM leads WHERE DATE_FORMAT(added_on, '%Y-%m') = ? AND (status = 'connected' OR status = 'not connected') AND DATE(added_on) >= ? AND DATE(added_on) <= ?");
         $stmt->execute([$ym, $startDate, $endDate]);
         $in_progress[] = (int)$stmt->fetchColumn();
         // Won
-        $stmt = $conn->prepare("SELECT COUNT(*) FROM leads WHERE DATE_FORMAT(added_on, '%Y-%m') = ? AND status = 'closed' AND response = 'positive' AND added_on >= ? AND added_on <= ?");
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM leads WHERE DATE_FORMAT(added_on, '%Y-%m') = ? AND status = 'closed' AND response = 'positive' AND DATE(added_on) >= ? AND DATE(added_on) <= ?");
         $stmt->execute([$ym, $startDate, $endDate]);
         $won[] = (int)$stmt->fetchColumn();
         // Lost
-        $stmt = $conn->prepare("SELECT COUNT(*) FROM leads WHERE DATE_FORMAT(added_on, '%Y-%m') = ? AND status = 'closed' AND response = 'negative' AND added_on >= ? AND added_on <= ?");
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM leads WHERE DATE_FORMAT(added_on, '%Y-%m') = ? AND status = 'closed' AND response = 'negative' AND DATE(added_on) >= ? AND DATE(added_on) <= ?");
         $stmt->execute([$ym, $startDate, $endDate]);
         $lost[] = (int)$stmt->fetchColumn();
     }
@@ -71,6 +71,6 @@ try {
     exit;
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['success'=>false, 'error'=>'DB error: '.$e->getMessage()]);
+    echo json_encode(['success'=>false, 'error'=>crm_public_error($e)]);
     exit;
 } 

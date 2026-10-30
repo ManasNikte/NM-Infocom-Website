@@ -429,57 +429,7 @@ function editSlide(id) {
     console.log(`Edit slide ID: ${id}`);
 }
 
-// Function to update order
-function updateOrder(id) {
-    const newOrder = prompt("Enter new display order:");
-    if (newOrder !== null) {
-        fetch(`./data/hero_slides_data.php`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'updateOrder',
-                slide_id: id,
-                new_order: newOrder
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                loadTableData(currentPage);
-            } else {
-                alert('Failed to update order');
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    }
-}
 
-// Function to delete slide
-function deleteSlide(id) {
-    if (confirm('Are you sure you want to delete this slide?')) {
-        fetch(`./data/hero_slides_data.php`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'delete',
-                slide_id: id
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                loadTableData(currentPage);
-            } else {
-                alert('Failed to delete slide');
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    }
-}
 
 // Function to render pagination
 function renderPagination(pagination) {
@@ -522,15 +472,15 @@ function changePage(page) {
     loadTableData(page);
 }
 
-// Function to start polling
+// Keep the table current (crmLiveRefresh)
 function startPolling() {
     loadTableData(currentPage);
-    pollingInterval = setInterval(() => {
+    pollingInterval = crmLiveRefresh(() => {
         loadTableData(currentPage);
-    }, 3000);
+    });
 }
 
-// Start polling when the page loads
+// Load the table, then keep it current (crmLiveRefresh)
 document.addEventListener('DOMContentLoaded', () => {
     startPolling();
 });

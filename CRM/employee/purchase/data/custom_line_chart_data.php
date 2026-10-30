@@ -62,6 +62,6 @@ try {
     exit;
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['success'=>false, 'error'=>'DB error: '.$e->getMessage()]);
+    echo json_encode(['success'=>false, 'error'=>crm_public_error($e)]);
     exit;
 } 

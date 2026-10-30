@@ -1,8 +1,6 @@
 <?php require_once './top.php'; ?>
 <!-- SweetAlert2 CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.css">
 <!-- SweetAlert2 JS -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
 
 <!-- MAIN CONTENT-->
 <div class="main-content" style="min-height: 100vh;">
@@ -68,41 +66,6 @@
           </div>
           <!-- END DATA TABLE 1 -->
         </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Request Leave Modal -->
-<!-- (No change to modal markup) -->
-<div class="modal fade" id="requestLeavePopup" tabindex="-1" role="dialog" aria-labelledby="requestLeaveModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="requestLeaveModalLabel">Request Leave</h5>
-        <button type="button" class="close" onclick="closeRequestLeavePopup()" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <form id="leaveForm">
-          <div class="form-group">
-            <label for="startDate">Start Date</label>
-            <input type="date" class="form-control" id="startDate" name="startDate" required>
-          </div>
-          <div class="form-group">
-            <label for="endDate">End Date</label>
-            <input type="date" class="form-control" id="endDate" name="endDate" required>
-          </div>
-          <div class="form-group">
-            <label for="reason">Reason for Leave</label>
-            <textarea class="form-control" id="reason" name="reason" rows="4" placeholder="Please specify your reason..." required></textarea>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick="closeRequestLeavePopup()">Cancel</button>
-        <button type="submit" class="btn btn-primary" form="leaveForm">Submit Request</button>
       </div>
     </div>
   </div>
@@ -439,19 +402,19 @@ let currentPage2 = 1;
 let pollingInterval1;
 let pollingInterval2;
 
-// Function to start polling
+// Keep the table current (crmLiveRefresh)
 function startPolling(tableId, currentPage, pollingInterval) {
     // Initial load
     loadTableData(tableId, currentPage);
     
-    // Set up polling every 3 seconds
-    pollingInterval = setInterval(() => {
+    // Keep the table current without polling (see crmLiveRefresh in layout/crm-ui.js)
+    pollingInterval = crmLiveRefresh(() => {
         if (tableId === 'table1') {
             loadTableData(tableId, currentPage1, true); // Pass true to indicate this is a background refresh
         } else {
             loadTableData(tableId, currentPage2, true); // Pass true to indicate this is a background refresh
         }
-    }, 3000);
+    }, { key: tableId });
 }
 
 // Improved debounce function
@@ -727,124 +690,6 @@ if (dateFilter2) {
     });
 }
 
-// Form submission handler
-const leaveForm = document.getElementById("leaveForm");
-if (leaveForm) {
-    leaveForm.addEventListener("submit", function(event) {
-        event.preventDefault();
-        
-        const formData = new FormData();
-        formData.append('action', 'addLeave');
-        formData.append('reason', document.getElementById("reason").value);
-        formData.append('startDate', document.getElementById("startDate").value);
-        formData.append('endDate', document.getElementById("endDate").value);
-
-        fetch('./data/leaves_data.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(result => {
-            if (result.status === 'success') {
-                // Reset filters and refresh table
-                const searchInput1 = document.getElementById("table1-search-input");
-                const statusFilter1 = document.getElementById("table1-statusFilter");
-                const dateFilter1 = document.getElementById("table1-dateFilter");
-                
-                if (searchInput1) searchInput1.value = '';
-                if (statusFilter1) statusFilter1.value = '';
-                if (dateFilter1) dateFilter1.value = '';
-                currentPage1 = 1;
-                
-                const searchInput2 = document.getElementById("table2-search-input");
-                const statusFilter2 = document.getElementById("table2-statusFilter");
-                const dateFilter2 = document.getElementById("table2-dateFilter");
-                
-                if (searchInput2) searchInput2.value = '';
-                if (statusFilter2) statusFilter2.value = '';
-                if (dateFilter2) dateFilter2.value = '';
-                currentPage2 = 1;
-                
-                // Restart polling
-                stopPolling(pollingInterval1);
-                startPolling('table1', currentPage1, pollingInterval1);
-                
-                stopPolling(pollingInterval2);
-                startPolling('table2', currentPage2, pollingInterval2);
-                
-                closeRequestLeavePopup();
-                this.reset();
-                showSuccessNotification();
-            } else {
-                alert('Failed to submit leave request');
-            }
-        })
-        .catch(error => {
-            alert('An error occurred while submitting the request');
-            console.error('Error:', error);
-        });
-    });
-}
-
-// Initialize tables
-loadTableData('table1', currentPage1);
-
-// Add date validation
-const startDateInput = document.getElementById("startDate");
-if (startDateInput) {
-    startDateInput.addEventListener("change", function() {
-        const startDate = this.value;
-        const endDateInput = document.getElementById("endDate");
-        if (endDateInput) {
-            endDateInput.min = startDate;
-            
-            // If end date is before start date, reset it
-            if (endDateInput.value && endDateInput.value < startDate) {
-                endDateInput.value = startDate;
-            }
-        }
-    });
-}
-
-// Add these functions for modal handling
-function openRequestLeavePopup() {
-    // Reset form
-    document.getElementById("leaveForm").reset();
-    
-    // Set min date as today for both date inputs
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById("startDate").min = today;
-    document.getElementById("endDate").min = today;
-    
-    // Show modal
-    $('#requestLeavePopup').modal('show');
-}
-
-function closeRequestLeavePopup() {
-    $('#requestLeavePopup').modal('hide');
-}
-
-// Success notification after form submission
-function showSuccessNotification() {
-    const notification = `
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            Leave request submitted successfully!
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    `;
-    
-    // Insert notification at the top of the card body
-    const cardBody = document.querySelector('.card-body');
-    cardBody.insertAdjacentHTML('afterbegin', notification);
-    
-    // Auto dismiss after 3 seconds
-    setTimeout(() => {
-        $('.alert').alert('close');
-    }, 3000);
-}
-
 // Function to stop polling
 function stopPolling(pollingInterval) {
     if (pollingInterval) {
@@ -852,7 +697,7 @@ function stopPolling(pollingInterval) {
     }
 }
 
-// Start polling when the page loads
+// Load the table, then keep it current (crmLiveRefresh)
 startPolling('table1', currentPage1, pollingInterval1);
 startPolling('table2', currentPage2, pollingInterval2);
 

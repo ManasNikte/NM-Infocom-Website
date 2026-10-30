@@ -342,21 +342,16 @@ function renderTable(webLineData) {
     });
 }
 
-// Function to start polling
+// Keep the table current (crmLiveRefresh)
 function startPolling() {
     loadTableData(currentPage);
-    pollingInterval = setInterval(() => {
+    pollingInterval = crmLiveRefresh(() => {
         loadTableData(currentPage);
-    }, 3000);
+    });
 }
 
-// Function to handle edit action
-function editWebLine(id) {
-    // Redirect to edit page or open a modal for editing
-    window.location.href = `edit_web_line.php?id=${id}`;
-}
 
-// Start polling when the page loads
+// Load the table, then keep it current (crmLiveRefresh)
 document.addEventListener('DOMContentLoaded', () => {
     startPolling();
 });
@@ -372,57 +367,11 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Edit Web Line popup logic
-function editWebLinePopup(id) {
-    const item = (window.allWebLineData || []).find(i => i.web_id == id);
-    if (!item) {
-        alert('Web Line not found!');
-        return;
-    }
-    document.getElementById('editWebId').value = item.web_id;
-    document.getElementById('editSiteName').value = item.site_name;
-    document.getElementById('editWhyUsIntro').value = item.whyus_introline;
-    document.getElementById('editTeamIntro').value = item.team_introline;
-    document.getElementById('editAddress').value = item.address;
-    document.getElementById('editContactNo').value = item.contact_no;
-    document.getElementById('editEmail').value = item.email;
-    document.getElementById('editMapLink').value = item.map_link;
-    document.getElementById('editTwitter').value = item.twitter_link;
-    document.getElementById('editFacebook').value = item.facebook_link;
-    document.getElementById('editInstagram').value = item.instagram_link;
-    document.getElementById('editLinkedIn').value = item.linkedin_link;
-    document.getElementById('editLastUpdated').value = item.last_updated;
-    document.getElementById('editWebLineForm').setAttribute('data-id', item.web_id);
-    $('#editWebLineModal').modal('show');
-}
 
 // Handle form submission
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('editWebLineForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const webId = this.getAttribute('data-id');
-        const siteName = document.getElementById('editSiteName').value;
-        const whyUsIntro = document.getElementById('editWhyUsIntro').value;
-        const teamIntro = document.getElementById('editTeamIntro').value;
-        const address = document.getElementById('editAddress').value;
-        const contactNo = document.getElementById('editContactNo').value;
-        const email = document.getElementById('editEmail').value;
-        const mapLink = document.getElementById('editMapLink').value;
-        const twitter = document.getElementById('editTwitter').value;
-        const facebook = document.getElementById('editFacebook').value;
-        const instagram = document.getElementById('editInstagram').value;
-        const linkedin = document.getElementById('editLinkedIn').value;
-        alert('Submitted!\nID: ' + webId + '\nSite Name: ' + siteName + '\nWhy Us Intro: ' + whyUsIntro + '\nTeam Intro: ' + teamIntro + '\nAddress: ' + address + '\nContact No: ' + contactNo + '\nEmail: ' + email + '\nMap Link: ' + mapLink + '\nTwitter: ' + twitter + '\nFacebook: ' + facebook + '\nInstagram: ' + instagram + '\nLinkedIn: ' + linkedin + '\n(Demo only, not saved)');
-        $('#editWebLineModal').modal('hide');
-    });
 });
 
-// Delete Web Line logic
-function deleteWebLine(id) {
-    if (confirm('Are you sure you want to delete this web line entry?')) {
-        alert('Delete functionality would be implemented here (Demo only)');
-    }
-}
 </script>
 
 <!-- Edit Web Line Modal -->
@@ -504,3 +453,32 @@ function deleteWebLine(id) {
     </div>
   </div>
 </div>
+
+<script>
+// Real create / edit / delete (data/content_admin.php); replaces the old demo-only handlers.
+(function () {
+  const resource = "web_data", pk = "web_id", noun = "site details", labelField = "site_name";
+  const fields = [{"label": "Site name", "name": "site_name", "type": "text", "required": true}, {"label": "Phone", "name": "contact_no", "type": "text", "required": false}, {"label": "Email", "name": "email", "type": "email", "required": false}, {"label": "Address", "name": "address", "type": "textarea", "required": false, "rows": 2}, {"label": "\"Why us\" intro line", "name": "whyus_introline", "type": "textarea", "required": false, "rows": 2}, {"label": "Team intro line", "name": "team_introline", "type": "textarea", "required": false, "rows": 2}, {"label": "Google Maps link", "name": "map_link", "type": "url", "required": false, "placeholder": "https://"}, {"label": "LinkedIn", "name": "linkedin_link", "type": "url", "required": false, "placeholder": "https://"}, {"label": "X / Twitter", "name": "twitter_link", "type": "url", "required": false, "placeholder": "https://"}, {"label": "Facebook", "name": "facebook_link", "type": "url", "required": false, "placeholder": "https://"}, {"label": "Instagram", "name": "instagram_link", "type": "url", "required": false, "placeholder": "https://"}];
+  const image = null;
+  let rows = {};
+  const baseRender = window.renderTable;
+  window.renderTable = function (list) {
+    rows = {};
+    (list || []).forEach((r) => { rows[r[pk]] = r; });
+    return baseRender.apply(this, arguments);
+  };
+  const reload = () => (typeof loadTableData === 'function' ? loadTableData(typeof currentPage !== 'undefined' ? currentPage : 1) : location.reload());
+  const imageOpts = (rec) => image && { label: image.label, required: image.required, current: rec && rec[image.field] ? '../../../' + rec[image.field].replace(/^\.?\//, '') : '' };
+  function edit(id) {
+    const rec = rows[id];
+    if (!rec) return Swal.fire({ icon: 'info', title: 'Refresh the page', text: 'This item was changed or removed.' });
+    crmContentEditor({ resource, title: 'Edit ' + noun, fields, image: imageOpts(rec), record: Object.assign({ __id: rec[pk] }, rec), onDone: reload });
+  }
+  window.crmAddContent = function () {
+    crmContentEditor({ resource, title: 'Add ' + noun, fields, image: imageOpts(null), record: null, onDone: reload });
+  };
+  window["editWebLine"] = edit;
+  window["editWebLinePopup"] = edit; 
+  
+})();
+</script>

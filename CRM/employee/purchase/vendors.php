@@ -104,8 +104,6 @@ require_once './data/vendors_data.php';
 
 <?php require './bottom.php'; ?>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.css">
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
 
 <style>
 /* Table Layout and Structure */
@@ -737,11 +735,11 @@ $(document).ready(function() {
         };
     }
 
-    // Start polling
+    // Keep the table current (crmLiveRefresh)
     function startPolling() {
-        pollingInterval = setInterval(function() {
+        pollingInterval = crmLiveRefresh(function() {
             loadPage(currentPage, true);
-        }, 3000);
+        });
     }
 
     // Pause polling
@@ -765,7 +763,7 @@ $(document).ready(function() {
         function() { resumePolling(); }
     );
 
-    // Start polling
+    // Keep the table current (crmLiveRefresh)
     startPolling();
 
     // Clean up on page unload
@@ -874,15 +872,15 @@ $(document).ready(function() {
             html: `
                 <div class="swal2-form-grid">
                     <label for="swalEditSupplierName">Supplier Name</label>
-                    <input type="text" id="swalEditSupplierName" class="swal2-input" placeholder="Supplier Name" value="${supplierName}" required>
+                    <input type="text" id="swalEditSupplierName" class="swal2-input" placeholder="Supplier Name" value="${esc(supplierName)}" required>
                     <label for="swalEditProductCategory">Product Category</label>
-                    <input type="text" id="swalEditProductCategory" class="swal2-input" placeholder="Product Category" value="${productCategory}" required>
+                    <input type="text" id="swalEditProductCategory" class="swal2-input" placeholder="Product Category" value="${esc(productCategory)}" required>
                     <label for="swalEditContactNumber">Contact Number</label>
-                    <input type="text" id="swalEditContactNumber" class="swal2-input" placeholder="Contact Number" value="${contactNumber}" required>
+                    <input type="text" id="swalEditContactNumber" class="swal2-input" placeholder="Contact Number" value="${esc(contactNumber)}" required>
                     <label for="swalEditEmail">Email</label>
-                    <input type="email" id="swalEditEmail" class="swal2-input" placeholder="Email" value="${email}" required>
+                    <input type="email" id="swalEditEmail" class="swal2-input" placeholder="Email" value="${esc(email)}" required>
                     <label for="swalEditAddress">Address</label>
-                    <input type="text" id="swalEditAddress" class="swal2-input" placeholder="Address" value="${address}" required>
+                    <input type="text" id="swalEditAddress" class="swal2-input" placeholder="Address" value="${esc(address)}" required>
                     <label for="swalEditPreviousDeal">Previous Deal</label>
                     <select id="swalEditPreviousDeal" class="swal2-input" required>
                         <option value="">Previous Deal?</option>
@@ -890,7 +888,7 @@ $(document).ready(function() {
                         <option value="No" ${previousDeal === 'No' ? 'selected' : ''}>No</option>
                     </select>
                     <label for="swalEditRemarks">Remarks</label>
-                    <textarea id="swalEditRemarks" class="swal2-textarea" placeholder="Remarks" style="resize:vertical;min-height:60px;">${remarks || ''}</textarea>
+                    <textarea id="swalEditRemarks" class="swal2-textarea" placeholder="Remarks" style="resize:vertical;min-height:60px;">${esc(remarks || '')}</textarea>
                 </div>
             `,
             focusConfirm: false,
@@ -972,6 +970,7 @@ $(document).ready(function() {
         $.ajax({
             url: './data/vendors_data.php',
             method: 'POST',
+            dataType: 'json',
             data: {
                 action: 'add_remark',
                 vendor_id: leadId,

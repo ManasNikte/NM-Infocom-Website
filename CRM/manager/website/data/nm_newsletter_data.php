@@ -1,151 +1,91 @@
 <?php
+// Newsletter subscribers (table newsletter_subscribers, filled by the public site's sign-up form).
+//   GET  [search, status, page]       -> { success, totals, data, pagination }
+//   GET  export=csv [search, status]  -> CSV download
+//   POST action=status id, status     -> subscribed | unsubscribed
+//   POST action=delete id
 require_once __DIR__ . '/../../../config/auth.php';
 $auth = crm_require_api(['Admin', 'Manager'], 'website');
-header('Content-Type: application/json');
 
-// Dummy data array
-$newsletters = [
-    [
-        'id' => 1,
-        'name' => 'Alice Johnson',
-        'email' => 'alice@example.com',
-        'date_added' => '2024-01-10',
-        'status' => 'subscribed'
-    ],
-    [
-        'id' => 2,
-        'name' => 'Bob Smith',
-        'email' => 'bob@example.com',
-        'date_added' => '2024-01-12',
-        'status' => 'unsubscribed'
-    ],
-    [
-        'id' => 3,
-        'name' => 'Charlie Brown',
-        'email' => 'charlie@example.com',
-        'date_added' => '2024-01-14',
-        'status' => 'subscribed'
-    ],
-    [
-        'id' => 4,
-        'name' => 'David Green',
-        'email' => 'david@example.com',
-        'date_added' => '2024-01-16',
-        'status' => 'subscribed'
-    ],
-    [
-        'id' => 5,
-        'name' => 'Eve White',
-        'email' => 'eve@example.com',
-        'date_added' => '2024-01-18',
-        'status' => 'unsubscribed'
-    ],
-    [
-        'id' => 6,
-        'name' => 'Frank Black',
-        'email' => 'frank@example.com',
-        'date_added' => '2024-01-20',
-        'status' => 'subscribed'
-    ],
-    [
-        'id' => 7,
-        'name' => 'Grace White',
-        'email' => 'grace@example.com',
-        'date_added' => '2024-01-22',
-        'status' => 'unsubscribed'
-    ],
-    [
-        'id' => 8,
-        'name' => 'Hank Brown',
-        'email' => 'hank@example.com',
-        'date_added' => '2024-01-24',
-        'status' => 'subscribed'
-    ],
-    [
-        'id' => 9,
-        'name' => 'Ivy Green',
-        'email' => 'ivy@example.com',
-        'date_added' => '2024-01-26',
-        'status' => 'unsubscribed'
-    ],
-    [
-        'id' => 10,
-        'name' => 'Jack Black',
-        'email' => 'jack@example.com',
-        'date_added' => '2024-01-28',
-        'status' => 'subscribed'
-    ],
-    [
-        'id' => 11,
-        'name' => 'Karen White',
-        'email' => 'karen@example.com',
-        'date_added' => '2024-01-30',
-        'status' => 'unsubscribed'
-    ],
-    [
-        'id' => 12,
-        'name' => 'Leo Brown',
-        'email' => 'leo@example.com',
-        'date_added' => '2024-02-01',
-        'status' => 'subscribed'
-    ],
-    [
-        'id' => 13,
-        'name' => 'Mia Green',
-        'email' => 'mia@example.com',
-        'date_added' => '2024-02-03',
-        'status' => 'unsubscribed'
-    ],
-    [
-        'id' => 14,
-        'name' => 'Nina Black',
-        'email' => 'nina@example.com',
-        'date_added' => '2024-02-05',
-        'status' => 'subscribed'
-    ],
-    [
-        'id' => 15,
-        'name' => 'Oscar White',
-        'email' => 'oscar@example.com',
-        'date_added' => '2024-02-07',
-        'status' => 'unsubscribed'
-    ],
-    [
-        'id' => 16,
-        'name' => 'Paul Brown',
-        'email' => 'paul@example.com',
-        'date_added' => '2024-02-09',
-        'status' => 'subscribed'
-    ],
-    [
-        'id' => 17,
-        'name' => 'Quinn Green',
-        'email' => 'quinn@example.com',
-        'date_added' => '2024-02-11',
-        'status' => 'unsubscribed'
-    ],
-    [
-        'id' => 18,
-        'name' => 'Rachel Black',
-        'email' => 'rachel@example.com',
-        'date_added' => '2024-02-13',
-        'status' => 'subscribed'
-    ],
-    [
-        'id' => 19,
-        'name' => 'Sam White',
-        'email' => 'sam@example.com',
-        'date_added' => '2024-02-15',
-        'status' => 'unsubscribed'
-    ],
-    [
-        'id' => 20,
-        'name' => 'Tina Brown',
-        'email' => 'tina@example.com',
-        'date_added' => '2024-02-17',
-        'status' => 'subscribed'
-    ]
-];
+try {
+    $conn = (new Database())->getConnection();
 
-echo json_encode($newsletters);
-?>
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        header('Content-Type: application/json');
+        $id = (int) ($_POST['id'] ?? 0);
+        $action = $_POST['action'] ?? '';
+        if ($action === 'status' && in_array($_POST['status'] ?? '', ['subscribed', 'unsubscribed'], true)) {
+            $stmt = $conn->prepare('UPDATE newsletter_subscribers SET status = ? WHERE id = ?');
+            $stmt->execute([$_POST['status'], $id]);
+        } elseif ($action === 'delete') {
+            $stmt = $conn->prepare('DELETE FROM newsletter_subscribers WHERE id = ?');
+            $stmt->execute([$id]);
+        } else {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Unknown action']);
+            exit;
+        }
+        $found = $conn->prepare('SELECT COUNT(*) FROM newsletter_subscribers WHERE id = ?');
+        $found->execute([$id]);
+        echo json_encode($action === 'delete' ? ($stmt->rowCount() > 0 ? ['success' => true] : ['success' => false, 'message' => 'Subscriber not found'])
+                                              : ($found->fetchColumn() ? ['success' => true] : ['success' => false, 'message' => 'Subscriber not found']));
+        exit;
+    }
+
+    $where = ['1=1'];
+    $params = [];
+    if (($search = trim((string) ($_GET['search'] ?? ''))) !== '') {
+        $where[] = 'email LIKE ?';
+        $params[] = '%' . $search . '%';
+    }
+    if (in_array($_GET['status'] ?? '', ['subscribed', 'unsubscribed'], true)) {
+        $where[] = 'status = ?';
+        $params[] = $_GET['status'];
+    }
+    $whereSql = implode(' AND ', $where);
+
+    if (($_GET['export'] ?? '') === 'csv') {
+        $stmt = $conn->prepare("SELECT email, status, subscribed_at FROM newsletter_subscribers WHERE $whereSql ORDER BY subscribed_at DESC");
+        $stmt->execute($params);
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="newsletter-subscribers-' . date('Y-m-d') . '.csv"');
+        $out = fopen('php://output', 'w');
+        fputcsv($out, ['Email', 'Status', 'Subscribed on']);
+        foreach ($stmt->fetchAll(PDO::FETCH_NUM) as $row) {
+            // A leading = + - @ would be run as a formula by spreadsheet apps.
+            fputcsv($out, array_map(fn ($v) => preg_match('/^[=+\-@]/', (string) $v) ? "'" . $v : $v, $row));
+        }
+        exit;
+    }
+
+    header('Content-Type: application/json');
+    $totals = $conn->query("SELECT
+            SUM(status = 'subscribed') AS subscribed,
+            SUM(status = 'unsubscribed') AS unsubscribed,
+            SUM(status = 'subscribed' AND subscribed_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')) AS this_month,
+            SUM(status = 'subscribed' AND subscribed_at >= CURDATE() - INTERVAL 30 DAY) AS last_30_days
+        FROM newsletter_subscribers")->fetch(PDO::FETCH_ASSOC);
+
+    $count = $conn->prepare("SELECT COUNT(*) FROM newsletter_subscribers WHERE $whereSql");
+    $count->execute($params);
+    $total = (int) $count->fetchColumn();
+    $perPage = 10;
+    $pages = max(1, (int) ceil($total / $perPage));
+    $page = min($pages, max(1, (int) ($_GET['page'] ?? 1)));
+    $stmt = $conn->prepare("SELECT id, email, status, subscribed_at FROM newsletter_subscribers WHERE $whereSql
+                            ORDER BY subscribed_at DESC, id DESC LIMIT " . (($page - 1) * $perPage) . ", $perPage");
+    $stmt->execute($params);
+
+    echo json_encode([
+        'success' => true,
+        'totals' => array_map('intval', $totals),
+        'data' => $stmt->fetchAll(PDO::FETCH_ASSOC),
+        'pagination' => ['page' => $page, 'pages' => $pages, 'total' => $total, 'per_page' => $perPage],
+    ]);
+} catch (Exception $e) {
+    if (!headers_sent()) {
+        header('Content-Type: application/json');
+    }
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => crm_public_error($e)]);
+}

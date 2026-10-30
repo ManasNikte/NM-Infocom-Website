@@ -10,6 +10,7 @@
                   <div class="card-header">
                     <h3 class="text-primary">Stats Management</h3>
                     <small class="text-muted">Manage stats data</small>
+                    <button type="button" class="btn btn-primary btn-sm ml-auto" onclick="crmAddContent()"><i class="fas fa-plus mr-1"></i> Add statistic</button>
                   </div>
                   <div class="card-body">
                     <div class="table-responsive table-responsive-data2">
@@ -248,6 +249,7 @@ function renderTable(statsData) {
                 <td>${esc(item.last_modified)}</td>
                 <td class="text-center">
                     <button class="btn btn-primary btn-sm btn-custom" onclick="editStat(${esc(item.stats_id)})">Edit</button>
+                    <button class="btn btn-danger btn-sm btn-custom" onclick="deleteStat(${esc(item.stats_id)})">Delete</button>
                 </td>
             </tr>
             <tr class='spacer'></tr>
@@ -256,57 +258,50 @@ function renderTable(statsData) {
     });
 }
 
-// Function to start polling
+// Keep the table current (crmLiveRefresh)
 function startPolling() {
     loadTableData(currentPage);
-    pollingInterval = setInterval(() => {
+    pollingInterval = crmLiveRefresh(() => {
         loadTableData(currentPage);
-    }, 3000);
+    });
 }
 
-// Function to handle edit action
-function editStat(id) {
-    // Find the stat by id from the global stats data
-    const stat = (window.allStatsData || []).find(item => item.stats_id == id);
-    let html = '';
-    if (stat) {
-        html += `<li class='list-group-item'><strong>ID:</strong> ${esc(stat.stats_id)}</li>`;
-        html += `<li class='list-group-item'><strong>Date Added:</strong> ${esc(stat.date_added)}</li>`;
-        html += `<li class='list-group-item'><strong>Last Modified:</strong> ${esc(stat.last_modified)}</li>`;
-        // Prefill the form inputs
-        setTimeout(function() {
-          document.getElementById('editStatInput').value = stat.stat;
-          document.getElementById('editCountsInput').value = stat.counts;
-        }, 200);
-        // Store the stat id for submission
-        document.getElementById('editStatForm').setAttribute('data-id', stat.stats_id);
-    } else {
-        html = `<li class='list-group-item'>No data found for this entry.</li>`;
-        setTimeout(function() {
-          document.getElementById('editStatInput').value = '';
-          document.getElementById('editCountsInput').value = '';
-        }, 200);
-        document.getElementById('editStatForm').removeAttribute('data-id');
-    }
-    document.getElementById('statDetailsList').innerHTML = html;
-    $('#viewStatModal').modal('show');
-}
 
 // Optional: handle form submission (demo only)
 document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('editStatForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    // In real use, send AJAX to update the stat
-    const statId = this.getAttribute('data-id');
-    const statValue = document.getElementById('editStatInput').value;
-    const countsValue = document.getElementById('editCountsInput').value;
-    alert('Submitted!\nID: ' + statId + '\nStat: ' + statValue + '\nCounts: ' + countsValue + '\n(Demo only, not saved)');
-    $('#viewStatModal').modal('hide');
-  });
 });
 
-// Start polling when the page loads
+// Load the table, then keep it current (crmLiveRefresh)
 document.addEventListener('DOMContentLoaded', () => {
     startPolling();
 });
+</script>
+
+<script>
+// Real create / edit / delete (data/content_admin.php); replaces the old demo-only handlers.
+(function () {
+  const resource = "stats", pk = "stats_id", noun = "statistic", labelField = "stat";
+  const fields = [{"label": "Label", "name": "stat", "type": "text", "required": true, "placeholder": "e.g. Happy clients"}, {"label": "Number", "name": "counts", "type": "number", "required": true}];
+  const image = null;
+  let rows = {};
+  const baseRender = window.renderTable;
+  window.renderTable = function (list) {
+    rows = {};
+    (list || []).forEach((r) => { rows[r[pk]] = r; });
+    return baseRender.apply(this, arguments);
+  };
+  const reload = () => (typeof loadTableData === 'function' ? loadTableData(typeof currentPage !== 'undefined' ? currentPage : 1) : location.reload());
+  const imageOpts = (rec) => image && { label: image.label, required: image.required, current: rec && rec[image.field] ? '../../../' + rec[image.field].replace(/^\.?\//, '') : '' };
+  function edit(id) {
+    const rec = rows[id];
+    if (!rec) return Swal.fire({ icon: 'info', title: 'Refresh the page', text: 'This item was changed or removed.' });
+    crmContentEditor({ resource, title: 'Edit ' + noun, fields, image: imageOpts(rec), record: Object.assign({ __id: rec[pk] }, rec), onDone: reload });
+  }
+  window.crmAddContent = function () {
+    crmContentEditor({ resource, title: 'Add ' + noun, fields, image: imageOpts(null), record: null, onDone: reload });
+  };
+  window["editStat"] = edit;
+  
+  window["deleteStat"] = (id) => crmContentDelete({ resource, id, label: (rows[id] && rows[id][labelField]) || noun, onDone: reload });
+})();
 </script>

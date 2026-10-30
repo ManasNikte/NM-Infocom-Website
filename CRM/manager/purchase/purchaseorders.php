@@ -1,7 +1,6 @@
 <?php 
 require_once './top.php';
 ?>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
 <!-- MAIN CONTENT-->
 <div class="main-content" style="min-height: 100vh;">
   <div class="section__content section__content--p30">
@@ -472,7 +471,7 @@ $(document).ready(function() {
         // Ellipsis and tooltip for long text fields
         function ellipsisCell(content) {
             if (!content) return '';
-            const safe = String(content).replace(/"/g, '&quot;');
+            const safe = esc(content);
             return `<span style="display:inline-block;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle;" title="${safe}">${safe}</span>`;
         }
         return `
@@ -552,6 +551,7 @@ $(document).ready(function() {
     }
 
     function loadPage(page = 1, search = '', status = '', vendor_id = '') {
+        loadPage.lastArgs = arguments;
         // If no status provided, use default filters
         if (!status) status = 'connected,closed';
         $.ajax({
@@ -579,6 +579,7 @@ $(document).ready(function() {
             }
         });
     }
+    crmLiveRefresh(function () { loadPage.apply(null, loadPage.lastArgs || []); }); // keep current without polling
 
     // Pagination click
     $(document).on('click', '.page-nav', function(e) {
@@ -1032,8 +1033,6 @@ $(document).ready(function() {
 </script>
 
 <!-- Add Toastr CSS and JS for notifications -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js"></script>
 
 
 

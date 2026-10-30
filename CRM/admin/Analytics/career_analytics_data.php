@@ -5,8 +5,8 @@ header('Content-Type: application/json');
 
 function getMonthRange($offset = 0) {
     // $offset = 0 for current month, -1 for previous month
-    $firstDay = date('Y-m-01', strtotime("$offset month"));
-    $lastDay = date('Y-m-t', strtotime("$offset month"));
+    $firstDay = date('Y-m-01', strtotime("first day of $offset month"));
+    $lastDay = date('Y-m-t', strtotime("first day of $offset month"));
     return [$firstDay, $lastDay];
 }
 
@@ -29,16 +29,16 @@ try {
     $jobs_prev = getCount($conn, "SELECT COUNT(*) FROM careers WHERE date_posted BETWEEN ? AND ?", [$prevStart, $prevEnd]);
 
     // Applicants
-    $applicants_curr = getCount($conn, "SELECT COUNT(*) FROM job_applicants WHERE date_applied BETWEEN ? AND ?", [$currStart, $currEnd]);
-    $applicants_prev = getCount($conn, "SELECT COUNT(*) FROM job_applicants WHERE date_applied BETWEEN ? AND ?", [$prevStart, $prevEnd]);
+    $applicants_curr = getCount($conn, "SELECT COUNT(*) FROM job_applicants WHERE DATE(date_applied) BETWEEN ? AND ?", [$currStart, $currEnd]);
+    $applicants_prev = getCount($conn, "SELECT COUNT(*) FROM job_applicants WHERE DATE(date_applied) BETWEEN ? AND ?", [$prevStart, $prevEnd]);
 
     // Shortlisted
-    $shortlisted_curr = getCount($conn, "SELECT COUNT(*) FROM job_applicants WHERE status = 'Shortlisted' AND date_applied BETWEEN ? AND ?", [$currStart, $currEnd]);
-    $shortlisted_prev = getCount($conn, "SELECT COUNT(*) FROM job_applicants WHERE status = 'Shortlisted' AND date_applied BETWEEN ? AND ?", [$prevStart, $prevEnd]);
+    $shortlisted_curr = getCount($conn, "SELECT COUNT(*) FROM job_applicants WHERE status = 'Shortlisted' AND DATE(date_applied) BETWEEN ? AND ?", [$currStart, $currEnd]);
+    $shortlisted_prev = getCount($conn, "SELECT COUNT(*) FROM job_applicants WHERE status = 'Shortlisted' AND DATE(date_applied) BETWEEN ? AND ?", [$prevStart, $prevEnd]);
 
     // Rejected
-    $rejected_curr = getCount($conn, "SELECT COUNT(*) FROM job_applicants WHERE status = 'Rejected' AND date_applied BETWEEN ? AND ?", [$currStart, $currEnd]);
-    $rejected_prev = getCount($conn, "SELECT COUNT(*) FROM job_applicants WHERE status = 'Rejected' AND date_applied BETWEEN ? AND ?", [$prevStart, $prevEnd]);
+    $rejected_curr = getCount($conn, "SELECT COUNT(*) FROM job_applicants WHERE status = 'Rejected' AND DATE(date_applied) BETWEEN ? AND ?", [$currStart, $currEnd]);
+    $rejected_prev = getCount($conn, "SELECT COUNT(*) FROM job_applicants WHERE status = 'Rejected' AND DATE(date_applied) BETWEEN ? AND ?", [$prevStart, $prevEnd]);
 
     // Helper for % change
     function percentChange($current, $previous) {
@@ -69,5 +69,5 @@ try {
 
     echo json_encode(['success' => true, 'data' => $result]);
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'error' => crm_public_error($e)]);
 } 

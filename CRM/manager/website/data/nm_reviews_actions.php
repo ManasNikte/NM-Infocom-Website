@@ -4,9 +4,6 @@ $auth = crm_require_api(['Admin', 'Manager'], 'website');
 
 // Set headers for JSON response
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
 
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -45,18 +42,15 @@ try {
     }
     
     // Get action and review ID
-    $action = $_REQUEST['action'] ?? $requestData['action'] ?? '';
-    $reviewId = $_REQUEST['review_id'] ?? $requestData['review_id'] ?? '';
+    // Changes only via POST (a GET link must never delete or publish a review).
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo json_encode(['success' => false, 'message' => 'POST only']);
+        exit;
+    }
+    $action = $requestData['action'] ?? '';
+    $reviewId = (int) ($requestData['review_id'] ?? 0);
     
-    // Log the request
-    error_log('Request: ' . print_r([
-        'method' => $_SERVER['REQUEST_METHOD'],
-        'action' => $action,
-        'review_id' => $reviewId,
-        'post' => $_POST,
-        'get' => $_GET,
-        'input' => file_get_contents('php://input')
-    ], true));
     
     if (empty($action) || empty($reviewId)) {
         throw new Exception('Missing required parameters: action and review_id');
@@ -97,12 +91,7 @@ try {
     $response = [
         'success' => false,
         'error' => [
-            'message' => 'An error occurred while processing your request.',
-            'debug' => [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine()
-            ]
+            'message' => 'An error occurred while processing your request.'
         ]
     ];
     

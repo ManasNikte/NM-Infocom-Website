@@ -11,5 +11,5 @@ try {
     $vendors = $stmt->fetchAll(PDO::FETCH_ASSOC);
     echo json_encode(['success' => true, 'vendors' => $vendors]);
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Error fetching vendors: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => crm_public_error($e)]);
 } 

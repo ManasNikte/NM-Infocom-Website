@@ -15,7 +15,7 @@ try {
     $status = isset($_POST['status']) ? trim($_POST['status']) : '';
     $date = isset($_POST['date']) ? trim($_POST['date']) : '';
     $page = isset($_POST['page']) ? max(1, intval($_POST['page'])) : 1;
-    $rowsPerPage = isset($_POST['rowsPerPage']) ? intval($_POST['rowsPerPage']) : 7;
+    $rowsPerPage = min(100, max(1, (int) ($_POST['rowsPerPage'] ?? 7)));
 
     // Build SQL
     $sql = "SELECT l.id, u.name, u.role, u.sub_role, l.reason, l.start_date, l.end_date, l.status

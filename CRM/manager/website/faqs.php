@@ -10,6 +10,7 @@
                   <div class="card-header">
                     <h3 class="text-primary">FAQs Management</h3>
                     <small class="text-muted">Manage FAQs</small>
+                    <button type="button" class="btn btn-primary btn-sm ml-auto" onclick="crmAddContent()"><i class="fas fa-plus mr-1"></i> Add FAQ</button>
                     <div class="mt-3 mb-2 d-flex justify-content-end">
                       <button type="button" class="btn btn-success" data-toggle="modal" data-target="#addFaqModal">
                         <i class="fa fa-plus"></i> Add FAQ
@@ -310,30 +311,17 @@ function renderTable(faqsData) {
     });
 }
 
-// Function to start polling
+// Keep the table current (crmLiveRefresh)
 function startPolling() {
     loadTableData(currentPage);
-    pollingInterval = setInterval(() => {
+    pollingInterval = crmLiveRefresh(() => {
         loadTableData(currentPage);
-    }, 3000);
+    });
 }
 
-// Function to handle edit action
-function editFaq(id) {
-    // Redirect to edit page or open a modal for editing
-    window.location.href = `edit_faq.php?id=${id}`;
-}
 
-// Function to handle delete action
-function deleteFaq(id) {
-    if (confirm('Are you sure you want to delete this FAQ?')) {
-        // Implement AJAX call to delete FAQ here
-        // Example: fetch(`./data/delete_faq.php?id=${id}`, { method: 'POST' }) ...
-        alert('Delete functionality not implemented.');
-    }
-}
 
-// Start polling when the page loads
+// Load the table, then keep it current (crmLiveRefresh)
 document.addEventListener('DOMContentLoaded', () => {
     startPolling();
 });
@@ -346,31 +334,9 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Edit FAQ popup logic
-function editFaqPopup(id) {
-    const item = (window.allFaqsData || []).find(i => i.faq_id == id);
-    if (!item) {
-        alert('FAQ not found!');
-        return;
-    }
-    document.getElementById('editFaqTitle').value = item.faq_title;
-    document.getElementById('editFaqDescription').value = item.faq_description;
-    document.getElementById('editFaqStatus').value = item.status;
-    document.getElementById('editFaqForm').setAttribute('data-id', item.faq_id);
-    $('#editFaqModal').modal('show');
-}
 
 // Handle form submission
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('editFaqForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const faqId = this.getAttribute('data-id');
-        const faqTitle = document.getElementById('editFaqTitle').value;
-        const faqDescription = document.getElementById('editFaqDescription').value;
-        const faqStatus = document.getElementById('editFaqStatus').value;
-        alert('Submitted!\nID: ' + faqId + '\nTitle: ' + faqTitle + '\nDescription: ' + faqDescription + '\nStatus: ' + faqStatus + '\n(Demo only, not saved)');
-        $('#editFaqModal').modal('hide');
-    });
 });
 
 // Update custom CSS for action buttons to ensure full visibility of button text/icons
@@ -403,4 +369,33 @@ style.innerHTML = `
   }
 `;
 document.head.appendChild(style);
+</script>
+
+<script>
+// Real create / edit / delete (data/content_admin.php); replaces the old demo-only handlers.
+(function () {
+  const resource = "faqs", pk = "faq_id", noun = "FAQ", labelField = "faq_title";
+  const fields = [{"label": "Question", "name": "faq_title", "type": "text", "required": true, "wide": true}, {"label": "Answer", "name": "faq_description", "type": "textarea", "required": true, "rows": 4}, {"label": "Category", "name": "category", "type": "text", "required": false, "placeholder": "e.g. General"}, {"label": "Order on page", "name": "display_order", "type": "number", "required": false, "value": "0"}, {"label": "Status", "name": "status", "type": "select", "required": true, "options": [["active", "Shown on the website"], ["inactive", "Hidden"]], "value": "active"}];
+  const image = null;
+  let rows = {};
+  const baseRender = window.renderTable;
+  window.renderTable = function (list) {
+    rows = {};
+    (list || []).forEach((r) => { rows[r[pk]] = r; });
+    return baseRender.apply(this, arguments);
+  };
+  const reload = () => (typeof loadTableData === 'function' ? loadTableData(typeof currentPage !== 'undefined' ? currentPage : 1) : location.reload());
+  const imageOpts = (rec) => image && { label: image.label, required: image.required, current: rec && rec[image.field] ? '../../../' + rec[image.field].replace(/^\.?\//, '') : '' };
+  function edit(id) {
+    const rec = rows[id];
+    if (!rec) return Swal.fire({ icon: 'info', title: 'Refresh the page', text: 'This item was changed or removed.' });
+    crmContentEditor({ resource, title: 'Edit ' + noun, fields, image: imageOpts(rec), record: Object.assign({ __id: rec[pk] }, rec), onDone: reload });
+  }
+  window.crmAddContent = function () {
+    crmContentEditor({ resource, title: 'Add ' + noun, fields, image: imageOpts(null), record: null, onDone: reload });
+  };
+  window["editFaq"] = edit;
+  window["editFaqPopup"] = edit; 
+  window["deleteFaq"] = (id) => crmContentDelete({ resource, id, label: (rows[id] && rows[id][labelField]) || noun, onDone: reload });
+})();
 </script>

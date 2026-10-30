@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $response['message'] = 'About points updated successfully';
     } catch (PDOException $e) {
         $conn->rollBack();
-        $response['message'] = 'Database error: ' . $e->getMessage();
+        $response['message'] = crm_public_error($e);
     }
 }
 

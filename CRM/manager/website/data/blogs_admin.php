@@ -42,7 +42,6 @@ try {
         $stmt = $conn->prepare('SELECT blog_img FROM blogs WHERE blog_id = ?');
         $stmt->execute([$id]);
         $img = $stmt->fetchColumn();
-        $conn->prepare('DELETE FROM blog_comments WHERE blog_id = ?')->execute([$id]);
         $conn->prepare('DELETE FROM blogs WHERE blog_id = ?')->execute([$id]);
         if ($img && str_starts_with($img, 'uploads/blog/')) {
             crm_delete_upload($img, 'blog');
@@ -76,7 +75,7 @@ try {
         try {
             $image = 'uploads/blog/' . crm_store_upload($_FILES['image'], 'blog', 'blog_', CRM_IMAGE_TYPES, 5 * 1024 * 1024);
         } catch (RuntimeException $e) {
-            blog_reply(false, 'Cover image: ' . $e->getMessage());
+            blog_reply(false, 'Cover image: ' . crm_public_error($e));
         }
     }
 

@@ -8,7 +8,7 @@ try {
     $db = new Database();
     $pdo = $db->getConnection();
 } catch (Exception $e) {
-    die(json_encode(['success' => false, 'message' => 'Database connection failed: ' . $e->getMessage()]));
+    die(json_encode(['success' => false, 'message' => crm_public_error($e)]));
 }
 
 $employee_id = null;
@@ -35,7 +35,7 @@ if (!$employee_id || strtolower($role) !== 'manager' || strtolower($sub_role) !=
 $sql = "SELECT l.*, u.id AS added_by_id, u.name AS added_by_name, u.role AS added_by_role, u.sub_role AS added_by_sub_role
         FROM leads l
         LEFT JOIN users u ON l.added_by = u.id
-        WHERE 1";
+        WHERE u.sub_role = 'marketing'"; // marketing manager: leads the marketing team added
 $params = [];
 
 // Search filter
@@ -169,45 +169,4 @@ if (!isset($includeOnly)) {
         ]
     ]);
     exit;
-}
-
-// Handle POST actions for updating status/response
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    $action = $_POST['action'];
-    if ($action === 'update_status' && isset($_POST['lead_id'], $_POST['status'])) {
-        $lead_id = intval($_POST['lead_id']);
-        $status = trim($_POST['status']);
-        $stmt = $pdo->prepare("UPDATE leads SET status = :status WHERE lead_id = :lead_id");
-        $stmt->execute([':status' => $status, ':lead_id' => $lead_id]);
-        echo json_encode(['success' => true]);
-        exit;
-    } elseif ($action === 'update_response' && isset($_POST['lead_id'], $_POST['response'])) {
-        $lead_id = intval($_POST['lead_id']);
-        $response = trim($_POST['response']);
-        $stmt = $pdo->prepare("UPDATE leads SET response = :response WHERE lead_id = :lead_id");
-        $stmt->execute([':response' => $response, ':lead_id' => $lead_id]);
-        echo json_encode(['success' => true]);
-        exit;
-    }
-    // In the POST action handler, for 'update_lead', forward the request to update_lead.php and return its response
-    if ($action === 'update_lead' && isset($_POST['lead'])) {
-        // Forward the request to update_lead.php
-        $lead = $_POST['lead'];
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, __DIR__ . '/update_lead.php');
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($lead));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        // Forward cookies for authentication
-        if (isset($_COOKIE['token'])) {
-            curl_setopt($ch, CURLOPT_COOKIE, 'token=' . $_COOKIE['token']);
-        }
-        $result = curl_exec($ch);
-        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        http_response_code($httpcode);
-        header('Content-Type: application/json');
-        echo $result;
-        exit;
-    }
 }

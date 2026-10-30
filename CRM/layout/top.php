@@ -31,6 +31,8 @@ $sub_role = $user['sub_role'] ?? null;
 $crm = $section['base'];
 $logoutUrl = $crm . '../logout.php';
 $currentPage = basename($_SERVER['SCRIPT_NAME']);
+// Chart.js is only sent to pages that draw charts (the page file or the dashboard banner).
+$pageHasCharts = strpos((string) @file_get_contents($_SERVER['SCRIPT_FILENAME']), 'new Chart') !== false;
 
 $renderNav = function () use ($section, $currentPage) {
     foreach ($section['nav'] as [$href, $icon, $label]) {
@@ -78,27 +80,20 @@ $initials = strtoupper(mb_substr($nameParts[0], 0, 1) . (count($nameParts) > 1 ?
   <link rel="icon" type="image/png" href="<?= $crm ?>images/icon/favicon.png" />
   <title><?= htmlspecialchars($section['title']) ?> | NM INFOCOM CRM</title>
 
-  <link href="<?= $crm ?>css/font-face.css" rel="stylesheet" media="all" />
-  <link href="<?= $crm ?>vendor/font-awesome-4.7/css/font-awesome.min.css" rel="stylesheet" media="all" />
-  <link href="<?= $crm ?>vendor/font-awesome-5/css/fontawesome-all.min.css" rel="stylesheet" media="all" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/v4-shims.min.css" rel="stylesheet" />
   <link href="<?= $crm ?>vendor/mdi-font/css/material-design-iconic-font.min.css" rel="stylesheet" media="all" />
   <link href="<?= $crm ?>vendor/bootstrap-4.1/bootstrap.min.css" rel="stylesheet" media="all" />
-  <link href="<?= $crm ?>vendor/animsition/animsition.min.css" rel="stylesheet" media="all" />
-  <link href="<?= $crm ?>vendor/bootstrap-progressbar/bootstrap-progressbar-3.3.4.min.css" rel="stylesheet" media="all" />
-  <link href="<?= $crm ?>vendor/wow/animate.css" rel="stylesheet" media="all" />
-  <link href="<?= $crm ?>vendor/css-hamburgers/hamburgers.min.css" rel="stylesheet" media="all" />
-  <link href="<?= $crm ?>vendor/slick/slick.css" rel="stylesheet" media="all" />
-  <link href="<?= $crm ?>vendor/select2/select2.min.css" rel="stylesheet" media="all" />
-  <link href="<?= $crm ?>vendor/perfect-scrollbar/perfect-scrollbar.css" rel="stylesheet" media="all" />
   <link href="<?= $crm ?>css/theme.css" rel="stylesheet" media="all" />
-  <link href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet" />
-  <link href="<?= $crm ?>layout/layout.css?v=16" rel="stylesheet" media="all" />
+  <link href="<?= $crm ?>layout/layout.css?v=17" rel="stylesheet" media="all" />
+  <?php if ($pageHasCharts): ?>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="<?= $crm ?>layout/crm-charts.js?v=6"></script>
+  <script src="<?= $crm ?>layout/crm-charts.js?v=7"></script>
+  <?php endif; ?>
+  <script src="<?= $crm ?>layout/crm-ui.js?v=3"></script>
   <script>
     // HTML-escape a value before putting it into markup (template literals, innerHTML).
     window.esc = function (v) {

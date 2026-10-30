@@ -235,11 +235,22 @@
   }
   applyDefaults();
 
+  // Drawing a chart on a canvas that already has one replaces it, so dashboards can redraw with fresh data.
+  var BaseChart = Chart;
+  function CrmChart(item, config) {
+    var previous = BaseChart.getChart(item);
+    if (previous) previous.destroy();
+    return new BaseChart(item, config);
+  }
+  Object.setPrototypeOf(CrmChart, BaseChart);
+  CrmChart.prototype = BaseChart.prototype;
+  window.Chart = CrmChart;
+
   window.crmCharts = {
     palette: PALETTE,
     refresh: function () {
       applyDefaults();
-      Object.values(Chart.instances || {}).forEach(function (chart) {
+      Object.values(BaseChart.instances || {}).forEach(function (chart) {
         styleOptions(chart);
         chart.update('none');
       });

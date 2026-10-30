@@ -143,6 +143,8 @@ require_once './top.php';
                                                     default => 'secondary'
                                                 };
                                                 $taskId = str_replace('#TASK', '', $task[0]);
+                                                $task = array_map(fn ($v) => htmlspecialchars((string) $v, ENT_QUOTES), $task);
+                                                $taskId = (int) $taskId;
                                                 echo "<tr style='transition: all 0.3s ease;'>
                                                     <td class='px-4'><span class='font-weight-bold'>{$task[0]}</span></td>
                                                     <td>{$task[1]}</td>
@@ -562,22 +564,28 @@ require_once './top.php';
 </div>
 
 <!-- Add necessary JavaScript -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Load bar chart data
-        fetch('data/bar_chart_data.php?ajax=true')
-            .then(response => response.json())
-            .then(data => {
-                initBarChart(data);
-            });
+        // Chart data; re-run by crmLiveRefresh when the tab comes back or another tab saves a change.
+        function crmLoadCharts() {
+            // Load bar chart data
+            fetch('data/bar_chart_data.php?ajax=true')
+                .then(response => response.json())
+                .then(data => {
+                    initBarChart(data);
+                });
 
-        // Load pie chart data
-        fetch('../../shared/task_status.php?mine=1')
-            .then(response => response.json())
-            .then(data => {
-                initPieChart(data);
-            });
+            // Load pie chart data
+            fetch('../../shared/task_status.php?mine=1')
+                .then(response => response.json())
+                .then(data => {
+                    initPieChart(data);
+                });
+
+        }
+        crmLoadCharts();
+        // The To Do list below is rendered on the server, so stale data means a quiet page reload.
+        crmReloadWhenStale();
 
         function initBarChart(data) {
             const customBarCtx = document.getElementById('customBarChart').getContext('2d');

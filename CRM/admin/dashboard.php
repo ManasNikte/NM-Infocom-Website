@@ -167,5 +167,6 @@
 
   $('#admRange').on('change', load);
   $(load);
+  crmLiveRefresh(load);
 })();
 </script>

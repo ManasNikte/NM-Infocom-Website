@@ -4,9 +4,6 @@ $auth = crm_require_api(['Admin', 'Manager'], 'website');
 
 // Set headers for JSON response
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
 
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -134,22 +131,10 @@ try {
     // Format the response
     $response = [
         'success' => true,
-        'debug' => [
-            'query' => $query,
-            'params' => array_merge($params, [
-                ':offset' => $offset,
-                ':perPage' => $perPage
-            ]),
-            'total_events' => $totalEvents,
-            'total_pages' => $totalPages,
-            'current_page' => $page,
-            'per_page' => $perPage,
-            'event_count' => count($events)
-        ],
         'events' => array_map(function($event) {
             return [
                 'id' => $event['event_id'],
-                'image' => $event['event_img'] ?? 'default-event.jpg',
+                'image' => $event['event_img'] ?: null,
                 'title' => $event['event_title'],
                 'author' => 'NM Infocom', // Default author
                 'description' => $event['event_description'],
@@ -187,13 +172,7 @@ try {
     $response = [
         'success' => false,
         'error' => [
-            'message' => 'An error occurred while processing your request.',
-            'debug' => [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => (isset($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'production') ? null : $e->getTraceAsString()
-            ]
+            'message' => 'An error occurred while processing your request.'
         ]
     ];
     

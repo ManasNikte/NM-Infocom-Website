@@ -27,7 +27,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Database connection failed: ' . $e->getMessage()
+        'message' => crm_public_error($e)
     ]);
     exit;
 }
@@ -60,6 +60,10 @@ try {
     $eventMode = trim($_POST['eventMode'] ?? '');
     $eventLocation = trim($_POST['eventLocation'] ?? '');
     $speakers = trim($_POST['eventSpeakers'] ?? '');
+    $eventLink = trim($_POST['eventLink'] ?? '');
+    if ($eventLink !== '' && (!preg_match('#^https?://#i', $eventLink) || !filter_var($eventLink, FILTER_VALIDATE_URL))) {
+        throw new Exception('The registration link must be a full address starting with https://');
+    }
     
     // Validate required fields
     $required = [
@@ -93,10 +97,8 @@ try {
     if (isset($_FILES['eventImage']) && $_FILES['eventImage']['error'] !== UPLOAD_ERR_NO_FILE) {
         try {
             $imagePath = handleFileUpload($_FILES['eventImage'], $eventId);
-        } catch (Exception $e) {
-            // Log the error but don't fail the entire operation
-            error_log('File upload error: ' . $e->getMessage());
-            // Continue without the image
+        } catch (RuntimeException $e) {
+            throw new Exception('Image: ' . $e->getMessage()); // tell the user instead of silently dropping the image
         }
     }
     
@@ -115,7 +117,8 @@ try {
                 event_date = :event_date,
                 event_time = :event_time,
                 event_mode = :event_mode,
-                event_location = :location,"
+                event_location = :location,
+                event_link = :link,"
                 . ($imagePath ? " event_img = :image," : "")
                 . " updated_at = NOW() 
                 WHERE event_id = :id";
@@ -137,7 +140,8 @@ try {
                 event_date,
                 event_time,
                 event_mode,
-                event_location,"
+                event_location,
+                event_link,"
                 . ($imagePath ? " event_img," : "")
                 . " created_at, 
                 updated_at
@@ -148,7 +152,8 @@ try {
                 :event_date,
                 :event_time,
                 :event_mode,
-                :location,"
+                :location,
+                :link,"
                 . ($imagePath ? " :image," : "")
                 . " NOW(), 
                 NOW()
@@ -171,6 +176,13 @@ try {
     $stmt->bindParam(':event_time', $eventTime);
     $stmt->bindParam(':event_mode', $eventMode);
     $stmt->bindParam(':location', $eventLocation);
+    $stmt->bindValue(':link', $eventLink !== '' ? $eventLink : null);
+    $oldImage = null;
+    if ($eventId && $imagePath) {
+        $old = $pdo->prepare('SELECT event_img FROM events WHERE event_id = ?');
+        $old->execute([$eventId]);
+        $oldImage = $old->fetchColumn() ?: null;
+    }
     
     // Begin transaction
     $pdo->beginTransaction();
@@ -204,6 +216,9 @@ try {
         
         // Commit the transaction
         $pdo->commit();
+        if ($oldImage && $oldImage !== $imagePath) {
+            crm_delete_upload($oldImage, 'events'); // the replaced image
+        }
         
         echo json_encode([
             'success' => true,
@@ -213,6 +228,9 @@ try {
     } catch (Exception $e) {
         // Rollback the transaction on error
         $pdo->rollBack();
+        if ($imagePath) {
+            crm_delete_upload($imagePath, 'events');
+        }
         throw $e;
     }
     
@@ -224,7 +242,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Error: ' . $e->getMessage()
+        'message' => crm_public_error($e)
     ]);
 }
 ?>

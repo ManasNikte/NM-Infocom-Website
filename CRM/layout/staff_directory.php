@@ -376,10 +376,6 @@
 }
 </style>
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js"></script>
-<script src="<?= $crm ?>vendor/sweetalert/sweetalert.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
 <script>
 $(document).ready(function() {
     let pollingInterval;
@@ -411,7 +407,7 @@ $(document).ready(function() {
         if (lead.resume_url && typeof lead.resume_url === 'string' && lead.resume_url.trim() !== '' && lead.resume_url.trim() !== '-') {
             let pdfPath = lead.resume_url;
             if (!pdfPath.startsWith('/')) pdfPath = '/' + pdfPath;
-            pdfIconHtml = `<a href="#" class="view-resume-pdf" data-resume-url="<?= $crm ?>../${pdfPath}" title="View Resume"><i class="zmdi zmdi-file-text pdf-icon" style="font-size:1.3em;color:#d32f2f;"></i></a>`;
+            pdfIconHtml = `<a href="#" class="view-resume-pdf" data-resume-url="<?= $crm ?>../${esc(pdfPath)}" title="View Resume"><i class="zmdi zmdi-file-text pdf-icon" style="font-size:1.3em;color:#d32f2f;"></i></a>`;
         }
         return `<tr>
             <td style="min-width:70px;max-width:80px;width:70px;padding-left:8px;padding-right:8px;">${esc(lead.lead_id)}</td>
@@ -470,6 +466,7 @@ $(document).ready(function() {
 
     // Function to load page data
     function loadPage(page, isPolling = false) {
+        loadPage.lastArgs = arguments;
         if (isPollingPaused && isPolling) return;
 
         // Log the parameters being sent to the server
@@ -521,6 +518,7 @@ $(document).ready(function() {
             }
         });
     }
+    crmLiveRefresh(function () { loadPage.apply(null, loadPage.lastArgs || []); }); // keep current without polling
 
     // Function to initialize tooltips
     function initTooltips() {
@@ -916,93 +914,9 @@ $(document).ready(function() {
     $(document).off('click', '.fire-employee-btn').on('click', '.fire-employee-btn', function() {
         const id = $(this).data('lead-id');
         const name = $(this).data('lead-name');
-        // Step 1: Confirm fire
-        swal({
-            title: "Are you sure?",
-            text: `Do you want to fire Employee-ID ${id} Name: ${name}?`,
-            icon: "warning",
-            buttons: [
-                "Cancel",
-                {
-                    text: "Yes, Fire",
-                    value: true,
-                    className: "swal-btn-danger"
-                }
-            ],
-            dangerMode: true,
-        }).then((willFire) => {
-            if (willFire) {
-                // Step 2: Ask for reason
-                swal({
-                    title: "Reason for Firing",
-                    text: "Please provide a reason for firing this employee:",
-                    content: {
-                        element: "input",
-                        attributes: {
-                            placeholder: "Enter reason...",
-                            type: "text"
-                        }
-                    },
-                    buttons: ["Cancel", {text: "Submit", value: true, className: "swal-btn-danger"}],
-                    dangerMode: true
-                }).then((reason) => {
-                    if (reason && reason.trim() !== "") {
-                        // Step 3: Send AJAX request
-                        swal({
-                            title: "Processing...",
-                            text: "Firing employee...",
-                            buttons: false,
-                            closeOnClickOutside: false,
-                            closeOnEsc: false,
-                            icon: "info"
-                        });
-                        $.ajax({
-                            url: '<?= $crm ?>shared/fire_employee.php',
-                            method: 'POST',
-                            data: {
-                                lead_id: id,
-                                reason: reason.trim()
-                            },
-                            success: function(response) {
-                                swal.close();
-                                if (response.success) {
-                                    toastr.success('Employee has been fired successfully');
-                                    loadPage(currentPage);
-                                } else {
-                                    toastr.error(response.error || 'Error firing employee');
-                                }
-                            },
-                            error: function(xhr, status, error) {
-                                swal.close();
-                                toastr.error('Error firing employee');
-                            }
-                        });
-                    } else if (reason !== null) {
-                        toastr.error('Please provide a reason for firing.');
-                    }
-                });
-            }
-        });
+        crmFireEmployee(id, name, '<?= $crm ?>', function () { loadPage(currentPage); });
     });
 
-    // Add CSS for swal-btn-danger if not present
-    if (!$('head style:contains(".swal-btn-danger")').length) {
-        $('head').append(`
-        <style>
-        .swal-btn-danger {
-            background: #d32f2f !important;
-            color: #fff !important;
-            border-radius: 8px !important;
-            border: none !important;
-            font-weight: 600 !important;
-        }
-        .swal-btn-danger:hover, .swal-btn-danger:focus {
-            background: #b71c1c !important;
-            color: #fff !important;
-        }
-        </style>
-        `);
-    }
 
     // Add User (SweetAlert2). Admins can create any role; HR managers create managers and employees.
     const canCreateAdmin = <?= json_encode(strtolower($role ?? '') === 'admin') ?>;
@@ -1127,7 +1041,7 @@ $(document).ready(function() {
         if (pdfUrl && pdfUrl !== '-') {
             Swal.fire({
                 title: 'Resume PDF',
-                html: `<iframe src='${pdfUrl}' width='100%' height='500px' style='border:none;'></iframe>`,
+                html: `<iframe src='${esc(pdfUrl)}' width='100%' height='500px' style='border:none;'></iframe>`,
                 width: 700,
                 showCloseButton: true,
                 showConfirmButton: false,

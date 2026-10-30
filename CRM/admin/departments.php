@@ -104,5 +104,6 @@
 
   $('#deptTabs').on('click', 'button', function () { load($(this).data('dept')); });
   $(() => load(new URLSearchParams(location.search).get('dept') || 'marketing'));
+  crmLiveRefresh(() => load(new URLSearchParams(location.search).get('dept') || 'marketing'));
 })();
 </script>

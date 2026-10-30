@@ -21,6 +21,15 @@ foreach ($required as $field) {
     }
 }
 
+if (!in_array(strtolower(trim((string) $data['previous_deal'])), ['yes', 'no'], true)) {
+    echo json_encode(['success' => false, 'message' => 'Previous deal must be Yes or No']);
+    exit;
+}
+if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+    echo json_encode(['success' => false, 'message' => 'Invalid email address']);
+    exit;
+}
+
 try {
     $db = new Database();
     $conn = $db->getConnection();
@@ -31,11 +40,13 @@ try {
         $data['contact_number'],
         $data['email'],
         $data['address'],
-        strtolower($data['previous_deal']),
+        strtolower(trim($data['previous_deal'])),
         $data['remarks'] ?? null,
-        $data['vendor_id']
+        (int) ltrim((string) $data['vendor_id'], 'Vv')
     ]);
-    echo json_encode(['success' => true, 'message' => 'Vendor updated successfully']);
+    $found = $conn->prepare('SELECT COUNT(*) FROM vendor WHERE id = ?');
+    $found->execute([(int) ltrim((string) $data['vendor_id'], 'Vv')]);
+    echo json_encode($found->fetchColumn() ? ['success' => true, 'message' => 'Vendor updated successfully'] : ['success' => false, 'message' => 'Vendor not found']);
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => crm_public_error($e)]);
 } 

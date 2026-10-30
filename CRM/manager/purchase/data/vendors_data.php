@@ -2,6 +2,21 @@
 require_once __DIR__ . '/../../../config/auth.php';
 $auth = crm_require_api(['Admin', 'Manager'], 'purchase');
 
+// Add or replace a vendor's remark (vendors page "Add remark").
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_remark') {
+    header('Content-Type: application/json');
+    $vendorId = (int) ltrim((string) ($_POST['vendor_id'] ?? ''), 'Vv');
+    $remark = mb_substr(trim((string) ($_POST['remark'] ?? '')), 0, 500);
+    if ($vendorId <= 0 || $remark === '') {
+        echo json_encode(['success' => false, 'message' => 'Write a remark first.']);
+        exit;
+    }
+    $stmt = getDBConnection()->prepare('UPDATE vendor SET remarks = ?, last_modified = NOW() WHERE id = ?');
+    $stmt->execute([$remark, $vendorId]);
+    echo json_encode($stmt->rowCount() > 0 ? ['success' => true, 'message' => 'Remark saved'] : ['success' => false, 'message' => 'Vendor not found']);
+    exit;
+}
+
 // Pagination settings
 $entries_per_page = 6;
 $current_page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
@@ -93,7 +108,6 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQ
         ]);
         exit;
     }
-    // TODO: Implement POST actions (add, update, delete) with DB if needed
 }
 
 // If it's a regular request without includeOnly flag

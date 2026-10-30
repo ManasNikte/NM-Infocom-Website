@@ -10,6 +10,7 @@
                   <div class="card-header">
                     <h3 class="text-primary">Client Logos Management</h3>
                     <small class="text-muted">Manage client logos</small>
+                    <button type="button" class="btn btn-primary btn-sm ml-auto" onclick="crmAddContent()"><i class="fas fa-plus mr-1"></i> Add client logo</button>
                     <div class="mt-3 mb-2 d-flex justify-content-end">
                       <button type="button" class="btn btn-success" data-toggle="modal" data-target="#addClientModal">
                         <i class="fa fa-plus"></i> Add New Client
@@ -189,7 +190,7 @@ function renderTable(clientLogos) {
                 <td>${esc(client.last_modified)}</td>
                 <td>
                     <button class="btn btn-primary btn-edit" onclick="editClient(${esc(client.client_id)})">Edit</button>
-                    <button class="btn btn-danger btn-delete">Delete</button>
+                    <button class="btn btn-danger btn-delete" onclick="deleteClient(${esc(client.client_id)})">Delete</button>
                 </td>
             </tr>
         `;
@@ -197,53 +198,50 @@ function renderTable(clientLogos) {
     });
 }
 
-// Function to start polling
+// Keep the table current (crmLiveRefresh)
 function startPolling() {
     loadTableData(currentPage);
-    pollingInterval = setInterval(() => {
+    pollingInterval = crmLiveRefresh(() => {
         loadTableData(currentPage);
-    }, 3000);
+    });
 }
 
-// Start polling when the page loads
+// Load the table, then keep it current (crmLiveRefresh)
 document.addEventListener('DOMContentLoaded', () => {
     startPolling();
 });
 
-// Edit button handler
-function editClient(id) {
-    const client = (window.allClientLogos || []).find(c => c.client_id == id);
-    let html = '';
-    if (client) {
-        html += `<li class='list-group-item'><strong>ID:</strong> ${esc(client.client_id)}</li>`;
-        html += `<li class='list-group-item'><strong>Date Added:</strong> ${esc(client.date_added)}</li>`;
-        html += `<li class='list-group-item'><strong>Last Modified:</strong> ${esc(client.last_modified)}</li>`;
-        setTimeout(function() {
-            document.getElementById('editClientName').value = client.client_name;
-            document.getElementById('currentClientLogo').src = '../../../' + client.client_img;
-            document.getElementById('editClientForm').setAttribute('data-id', client.client_id);
-        }, 200);
-    } else {
-        html = `<li class='list-group-item'>No data found for this entry.</li>`;
-        setTimeout(function() {
-            document.getElementById('editClientName').value = '';
-            document.getElementById('currentClientLogo').src = '';
-            document.getElementById('editClientForm').removeAttribute('data-id');
-        }, 200);
-    }
-    document.getElementById('clientDetailsList').innerHTML = html;
-    $('#editClientModal').modal('show');
-}
 
 // Handle form submission (demo only)
 document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('editClientForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const clientId = this.getAttribute('data-id');
-    const clientName = document.getElementById('editClientName').value;
-    // For demo, we do not handle file upload
-    alert('Submitted!\nID: ' + clientId + '\nClient Name: ' + clientName + '\n(Demo only, not saved)');
-    $('#editClientModal').modal('hide');
-  });
 });
+</script>
+
+<script>
+// Real create / edit / delete (data/content_admin.php); replaces the old demo-only handlers.
+(function () {
+  const resource = "clients", pk = "client_id", noun = "client logo", labelField = "client_name";
+  const fields = [{"label": "Client name", "name": "client_name", "type": "text", "required": true, "wide": true}];
+  const image = {"field": "client_img", "label": "Logo", "required": true};
+  let rows = {};
+  const baseRender = window.renderTable;
+  window.renderTable = function (list) {
+    rows = {};
+    (list || []).forEach((r) => { rows[r[pk]] = r; });
+    return baseRender.apply(this, arguments);
+  };
+  const reload = () => (typeof loadTableData === 'function' ? loadTableData(typeof currentPage !== 'undefined' ? currentPage : 1) : location.reload());
+  const imageOpts = (rec) => image && { label: image.label, required: image.required, current: rec && rec[image.field] ? '../../../' + rec[image.field].replace(/^\.?\//, '') : '' };
+  function edit(id) {
+    const rec = rows[id];
+    if (!rec) return Swal.fire({ icon: 'info', title: 'Refresh the page', text: 'This item was changed or removed.' });
+    crmContentEditor({ resource, title: 'Edit ' + noun, fields, image: imageOpts(rec), record: Object.assign({ __id: rec[pk] }, rec), onDone: reload });
+  }
+  window.crmAddContent = function () {
+    crmContentEditor({ resource, title: 'Add ' + noun, fields, image: imageOpts(null), record: null, onDone: reload });
+  };
+  window["editClient"] = edit;
+  
+  window["deleteClient"] = (id) => crmContentDelete({ resource, id, label: (rows[id] && rows[id][labelField]) || noun, onDone: reload });
+})();
 </script>

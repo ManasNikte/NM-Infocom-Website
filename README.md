@@ -49,6 +49,9 @@ shell in the CRM.
 
 **CRM** (`/CRM/`)
 - One shared layout for every role: sidebar, top bar, responsive off-canvas menu on phones.
+- **Live data without polling**: tables, KPI tiles and charts refresh when you come back to the tab (after 30 s away)
+  and as soon as you save something in another open CRM tab (`crmLiveRefresh` in `CRM/layout/crm-ui.js`, using the
+  browser's BroadcastChannel). Idle pages make no requests at all.
 - **Dark and light mode**: toggle in the top bar (sun/moon). It follows the device setting until someone picks one;
   the choice is saved per browser. Every chart re-colours with the theme (`CRM/layout/crm-charts.js`).
 - Every dashboard opens with a greeting banner and live KPI tiles (`CRM/layout/dashboard_hero.php`, fed by
@@ -58,7 +61,8 @@ shell in the CRM.
   directory with **Add user** (any role; login details emailed over SMTP), leads, vendors, careers, tasks, leave approvals.
   **Workspaces** (sidebar → *Work as*) open every manager and employee desk, so the admin can do anything any role can.
 - **Managers** (marketing, sales, purchase, HR, website): department dashboard, team list, team leave approvals, task
-  assignment; HR adds staff; website manager edits site content (blog posts, products, events, reviews, FAQs…).
+  assignment; HR adds staff; website manager edits site content: blog posts, products, events, reviews, FAQs, team,
+  client logos, stats, why-us cards, site details, and the newsletter subscriber list (with CSV export).
 - **Employees**: personal dashboard, own tasks, leave requests, leads/sales/vendors for their department.
 
 ## Screenshots
@@ -184,7 +188,6 @@ All secrets and server settings live in a `.env` file. It is **never committed**
 | `APP_URL` | Public site URL, used in emailed links |
 | `APP_DEBUG` | `1` shows PHP errors and allows a development JWT key. **Keep `0` in production.** |
 | `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS` | Main database |
-| `WITJAB_DB_*` | Optional second database for the WitJab pages |
 | `CRM_JWT_SECRET` | Signs CRM sessions. **Required, 32+ characters.** Without it the CRM refuses to sign anyone in. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` | Outgoing mail |
 | `MAIL_FROM`, `MAIL_FROM_NAME` | Sender of system emails |
@@ -272,20 +275,32 @@ Notifications are best-effort: if SMTP is down, the task or leave is still saved
 | `2026_10_29_utf8mb4_tables.sql` | Converts the remaining latin1 tables to utf8mb4 so ₹ and Indian-language text can be stored |
 | `2026_10_30_admin_name.sql` | Names the administrator account Manish Nikte |
 | `2026_10_30_partner_paths.sql` | Fixes one partner logo stored with a root-relative path |
+| `2026_10_30_drop_unused_tables.sql` | Drops `benefits` and `blog_comments` (nothing uses them) |
+| `2026_10_30_indexes.sql` | Indexes for the per-person / per-status lookups every dashboard makes (safe to re-run) |
+| `2026_10_30_session_revocation.sql` | Adds `users.tokens_valid_after` so a password change signs out other devices |
+| `2026_10_30_content_primary_keys.sql` | Gives the website content tables (clients, FAQs, slides, partners, stats, site details, why-us) primary keys and auto-increment IDs, so the CRM can add to them |
 
 ## Security model
 
 - **Sessions**: HS256 JWT in an `HttpOnly`, `SameSite=Lax` (and `Secure` over HTTPS) cookie, 24-hour expiry. Every CRM
-  page and endpoint calls `crm_require_page()` / `crm_require_api()` with the allowed roles and department.
+  page and endpoint calls `crm_require_page()` / `crm_require_api()` with the allowed roles and department. Each
+  request also re-checks the account in the database: a fired user, a changed role or department, or a password
+  change (`users.tokens_valid_after`) ends existing sessions immediately.
 - **CSRF**: `SameSite=Lax` plus a server-side check that rejects cross-site state-changing requests.
 - **Brute force**: 10 failed sign-ins per IP per 15 minutes; inactive/fired accounts cannot sign in.
-- **XSS**: output is escaped in PHP (`htmlspecialchars`) and in JavaScript templates (global `esc()` helper).
+- **XSS**: output is escaped in PHP (`htmlspecialchars`) and in JavaScript templates (global `esc()` helper), including
+  values read back from `data-*` attributes into edit dialogs. A browser test plants script payloads in every
+  user-editable field and opens every list and dialog; none run.
+- **Input validation**: lead statuses/responses, vendor fields, dates (no 31 Feb), page sizes and links (`https://`
+  only) are checked on the server; lead assignment only goes to active sales employees.
+- **Errors**: database and internal errors are logged; users only see a generic message (`crm_public_error()`).
 - **SQL injection**: prepared statements throughout; dynamic `LIMIT` values are cast to integers.
 - **Uploads**: type checked by file content, server-chosen file names, size limits, and `uploads/.htaccess` blocks
   script execution. Deletes are confined to `uploads/`.
 - **Public forms**: honeypot field, per-IP rate limits, length limits, generic error messages.
-- **Hardening**: `.htaccess` disables directory listings and blocks dotfiles, `config/`, `database/`, `vendor/` and
-  CRM templates; security headers are sent; PHP errors are logged, not displayed, unless `APP_DEBUG=1`.
+- **Hardening**: `.htaccess` disables directory listings and blocks dotfiles; `config/`, `database/` and `vendor/` have
+  their own deny-all `.htaccess`; security headers are sent; PHP errors are logged, not displayed, unless `APP_DEBUG=1`.
+  No endpoint sends `Access-Control-Allow-Origin`, and every state change requires POST.
 
 Found a vulnerability? Please email the address on the website's contact page instead of opening a public issue.
 

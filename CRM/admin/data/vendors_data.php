@@ -2,6 +2,21 @@
 require_once __DIR__ . '/../../config/auth.php';
 $auth = crm_require_api('Admin');
 
+// Add or replace a vendor's remark (vendors page "Add remark").
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_remark') {
+    header('Content-Type: application/json');
+    $vendorId = (int) ltrim((string) ($_POST['vendor_id'] ?? ''), 'Vv');
+    $remark = mb_substr(trim((string) ($_POST['remark'] ?? '')), 0, 500);
+    if ($vendorId <= 0 || $remark === '') {
+        echo json_encode(['success' => false, 'message' => 'Write a remark first.']);
+        exit;
+    }
+    $stmt = getDBConnection()->prepare('UPDATE vendor SET remarks = ?, last_modified = NOW() WHERE id = ?');
+    $stmt->execute([$remark, $vendorId]);
+    echo json_encode($stmt->rowCount() > 0 ? ['success' => true, 'message' => 'Remark saved'] : ['success' => false, 'message' => 'Vendor not found']);
+    exit;
+}
+
 // Only require the database config, do NOT redeclare getDBConnection()
 
 // Use getDBConnection() from config/database.php
@@ -18,14 +33,14 @@ $params = [];
 if (!empty($_GET['searchInput'])) {
     $search = '%' . strtolower(trim($_GET['searchInput'])) . '%';
     $where[] = '('
-        . 'LOWER(id) LIKE :search1 OR '
-        . 'LOWER(supplier_name) LIKE :search2 OR '
-        . 'LOWER(product_category) LIKE :search3 OR '
-        . 'LOWER(contact_number) LIKE :search4 OR '
-        . 'LOWER(email) LIKE :search5 OR '
-        . 'LOWER(address) LIKE :search6 OR '
-        . 'LOWER(previous_deal) LIKE :search7 OR '
-        . 'LOWER(remarks) LIKE :search8'
+        . 'LOWER(v.id) LIKE :search1 OR '
+        . 'LOWER(v.supplier_name) LIKE :search2 OR '
+        . 'LOWER(v.product_category) LIKE :search3 OR '
+        . 'LOWER(v.contact_number) LIKE :search4 OR '
+        . 'LOWER(v.email) LIKE :search5 OR '
+        . 'LOWER(v.address) LIKE :search6 OR '
+        . 'LOWER(v.previous_deal) LIKE :search7 OR '
+        . 'LOWER(v.remarks) LIKE :search8'
         . ')';
     $params[':search1'] = $search;
     $params[':search2'] = $search;
@@ -37,13 +52,13 @@ if (!empty($_GET['searchInput'])) {
     $params[':search8'] = $search;
 }
 if (!empty($_GET['status']) && in_array(strtolower($_GET['status']), ['yes', 'no'])) {
-    $where[] = 'LOWER(previous_deal) = :status';
+    $where[] = 'LOWER(v.previous_deal) = :status';
     $params[':status'] = strtolower($_GET['status']);
 }
 $where_sql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
 
 // Get total count
-$count_sql = "SELECT COUNT(*) FROM vendor $where_sql";
+$count_sql = "SELECT COUNT(*) FROM vendor v $where_sql";
 $stmt = getDBConnection()->prepare($count_sql);
 $stmt->execute($params);
 $total_entries = (int)$stmt->fetchColumn();
@@ -106,7 +121,6 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQ
         ]);
         exit;
     }
-    // TODO: Implement POST actions (add, update, delete) with DB if needed
 }
 
 // If it's a regular request without includeOnly flag
@@ -129,5 +143,5 @@ if (!isset($includeOnly)) {
 try {
     $conn = getDBConnection();
 } catch (Exception $e) {
-    die('DB Error: ' . $e->getMessage());
+    die('DB Error: ' . crm_public_error($e));
 }

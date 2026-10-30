@@ -393,6 +393,7 @@ function handleSearch(tableId) {
 
 // Modify the loadTableData function to always update the table
 function loadTableData(tableId, currentPage, isBackgroundRefresh = false) {
+    if (!document.getElementById(`${tableId}-search-input`)) return; // table not on this page
     const searchTerm = document.getElementById(`${tableId}-search-input`).value.trim();
     const statusFilter = document.getElementById(`${tableId}-statusFilter`).value;
     const dateFilter = document.getElementById(`${tableId}-dateFilter`).value;
@@ -447,6 +448,7 @@ function loadTableData(tableId, currentPage, isBackgroundRefresh = false) {
             console.log('Error details:', error);
     });
 }
+['table1', 'table2'].forEach((t) => crmLiveRefresh(() => loadTableData(t, t === 'table1' ? currentPage1 : currentPage2, true), { key: t }));
 
 function renderTable(tableId, data, currentPage) {
   const tableBody = document.getElementById(`${tableId}-table-body`);
@@ -774,5 +776,3 @@ if (requestLeaveBtn) {
 <?php require __DIR__ . '/bottom.php'; ?>
 
 <!-- Add SweetAlert2 JS and CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.css">
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>

@@ -26,8 +26,8 @@ try {
 
     $sql = "SELECT DATE_FORMAT(added_on, '%M %Y') as month_label, COUNT(*) as count
             FROM leads
-            WHERE added_on >= :start_date
-              AND added_on <= :end_date
+            WHERE added_by IN (SELECT id FROM users WHERE sub_role = 'marketing') AND DATE(added_on) >= :start_date
+              AND DATE(added_on) <= :end_date
             GROUP BY month_label
             ORDER BY MIN(added_on)";
     $stmt = $conn->prepare($sql);
@@ -48,6 +48,6 @@ try {
     exit;
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['success'=>false, 'error'=>'DB error: '.$e->getMessage()]);
+    echo json_encode(['success'=>false, 'error'=>crm_public_error($e)]);
     exit;
 } 

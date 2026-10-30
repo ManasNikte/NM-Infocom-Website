@@ -654,3 +654,7 @@ html[data-theme="dark"] .crm-acting-text b { color: #fbbf24; }
 body.crm .crm-acting-back { background: var(--crm-surface) !important; border: 1px solid var(--crm-border) !important; color: var(--crm-heading) !important; }
 .crm-nav-link.crm-nav-back { color: #fbbf24 !important; background: rgba(245, 158, 11, .1); margin-bottom: 6px; }
 @media (max-width: 991px) { .crm-acting { padding: 10px 16px; } .crm-acting-text { min-width: 0; flex-basis: 100%; } }
+/* Two-column form grid for content editors */
+body.crm .swal2-popup:not(#_p):not(#_q) .crm-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
+body.crm .swal2-popup:not(#_p):not(#_q) .crm-form-grid .crm-field:has(textarea), body.crm .swal2-popup:not(#_p):not(#_q) .crm-form-grid .crm-field-wide { grid-column: 1 / -1; }
+@media (max-width: 640px) { body.crm .swal2-popup:not(#_p):not(#_q) .crm-form-grid { grid-template-columns: minmax(0, 1fr); } }

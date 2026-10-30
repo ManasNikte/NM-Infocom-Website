@@ -12,19 +12,8 @@
   <script src="<?= $crm ?>vendor/jquery-3.2.1.min.js"></script>
   <script src="<?= $crm ?>vendor/bootstrap-4.1/popper.min.js"></script>
   <script src="<?= $crm ?>vendor/bootstrap-4.1/bootstrap.min.js"></script>
-  <script src="<?= $crm ?>vendor/slick/slick.min.js"></script>
-  <script src="<?= $crm ?>vendor/wow/wow.min.js"></script>
-  <script src="<?= $crm ?>vendor/animsition/animsition.min.js"></script>
-  <script src="<?= $crm ?>vendor/bootstrap-progressbar/bootstrap-progressbar.min.js"></script>
-  <script src="<?= $crm ?>vendor/counter-up/jquery.waypoints.min.js"></script>
-  <script src="<?= $crm ?>vendor/counter-up/jquery.counterup.min.js"></script>
-  <script src="<?= $crm ?>vendor/circle-progress/circle-progress.min.js"></script>
-  <script src="<?= $crm ?>vendor/perfect-scrollbar/perfect-scrollbar.js"></script>
-  <script src="<?= $crm ?>vendor/select2/select2.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
-  <script src="<?= $crm ?>js/main.js"></script>
-  <script src="<?= $crm ?>layout/crm-ui.js?v=1"></script>
   <script>
     // Off-canvas sidebar on small screens.
     (function () {

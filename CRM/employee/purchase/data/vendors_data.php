@@ -43,6 +43,9 @@ function map_vendor_row($row) {
 }
 
 $action = $_POST['action'] ?? $_GET['action'] ?? null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action) {
+    header('Content-Type: application/json'); // this file is also included by the vendors page itself
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add_vendor') {
     $vendor = is_array($_POST['vendor'] ?? null) ? $_POST['vendor'] : [];

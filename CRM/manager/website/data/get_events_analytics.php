@@ -22,8 +22,8 @@ try {
     // Get current date and first day of current month
     $currentDate = (new DateTimeImmutable('now', new DateTimeZone('Asia/Kolkata')))->format('Y-m-d'); // same clock as the public Events page
     $firstDayOfMonth = date('Y-m-01');
-    $firstDayOfLastMonth = date('Y-m-01', strtotime('-1 month'));
-    $lastDayOfLastMonth = date('Y-m-t', strtotime('-1 month'));
+    $firstDayOfLastMonth = date('Y-m-01', strtotime('first day of last month'));
+    $lastDayOfLastMonth = date('Y-m-t', strtotime('first day of last month'));
     
     // 1. Total Events Count
     $query = "SELECT COUNT(*) as total_events FROM events";
@@ -87,12 +87,12 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Database error: ' . $e->getMessage()
+        'message' => crm_public_error($e)
     ]);
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Error: ' . $e->getMessage()
+        'message' => crm_public_error($e)
     ]);
 }

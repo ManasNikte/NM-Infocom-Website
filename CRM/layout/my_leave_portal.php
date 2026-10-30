@@ -169,7 +169,6 @@ function is_valid_leaves_result($result) {
 </form>
 
 <!-- SweetAlert CDN -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
 
 <script>
 // Edit leave functionality with SweetAlert
@@ -178,6 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to refresh table data via AJAX
     function refreshTableData() {
+        refreshTableData.lastArgs = arguments;
         const currentUrl = new URL(window.location);
         const searchParams = currentUrl.searchParams;
         
@@ -221,6 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error refreshing table data:', error);
         });
     }
+    crmLiveRefresh(function () { refreshTableData.apply(null, refreshTableData.lastArgs || []); }); // keep current without polling
     
     // Function to attach event listeners to edit buttons
     function attachEditButtonListeners() {
@@ -251,7 +252,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="form-group">
                         <label for="editReason">Reason for Leave</label>
-                        <textarea class="form-control" id="editReason" rows="4" placeholder="Please specify your reason..." required>${reason}</textarea>
+                        <textarea class="form-control" id="editReason" rows="4" placeholder="Please specify your reason..." required>${esc(reason)}</textarea>
                     </div>
                 `;
                 

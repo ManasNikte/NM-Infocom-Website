@@ -29,7 +29,13 @@ try {
         echo json_encode(['success' => false, 'message' => 'Current password is incorrect.']);
         exit;
     }
-    $conn->prepare('UPDATE users SET password = ? WHERE id = ?')->execute([password_hash($new, PASSWORD_DEFAULT), $auth->id]);
+    // Signs out every other session of this account; this browser gets a fresh token.
+    // PHP's clock on both sides (crm_session_still_valid compares with strtotime), so DB/PHP timezones can't disagree.
+    $conn->prepare('UPDATE users SET password = ?, tokens_valid_after = ? WHERE id = ?')
+         ->execute([password_hash($new, PASSWORD_DEFAULT), date('Y-m-d H:i:s'), $auth->id]);
+    $me = $conn->prepare('SELECT id, email, role, sub_role FROM users WHERE id = ?');
+    $me->execute([$auth->id]);
+    crm_issue_token($me->fetch(PDO::FETCH_ASSOC));
     echo json_encode(['success' => true]);
 } catch (Exception $e) {
     error_log('update_password: ' . $e->getMessage());

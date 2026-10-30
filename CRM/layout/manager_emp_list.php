@@ -276,7 +276,6 @@
 }
 </style>
 
-<script src="<?= $crm ?>vendor/sweetalert/sweetalert.min.js"></script>
 <script>
 $(document).ready(function() {
     let pollingInterval;
@@ -307,7 +306,7 @@ $(document).ready(function() {
             <td>${esc(lead.role)}</td>
             <td class="text-center">
                 ${lead.resume_url ? 
-                    `<a href="${esc(lead.resume_url)}" target="_blank" title="View Resume" data-toggle="tooltip">
+                    `<a href="<?= $crm ?>../${esc(lead.resume_url)}" target="_blank" rel="noopener" title="View Resume" data-toggle="tooltip">
                         <i class="zmdi zmdi-file-text pdf-icon"></i>
                     </a>` : 
                     '<span class="text-muted">-</span>'
@@ -355,6 +354,7 @@ $(document).ready(function() {
 
     // Function to load page data
     function loadPage(page, isPolling = false) {
+        loadPage.lastArgs = arguments;
         if (isPollingPaused && isPolling) return;
 
         // Log the parameters being sent to the server
@@ -401,6 +401,7 @@ $(document).ready(function() {
             }
         });
     }
+    crmLiveRefresh(function () { loadPage.apply(null, loadPage.lastArgs || []); }); // keep current without polling
 
     // Function to initialize tooltips
     function initTooltips() {
@@ -552,92 +553,8 @@ $(document).ready(function() {
     $(document).off('click', '.fire-employee-btn').on('click', '.fire-employee-btn', function() {
         const id = $(this).data('lead-id');
         const name = $(this).data('lead-name');
-        // Step 1: Confirm fire
-        swal({
-            title: "Are you sure?",
-            text: `Do you want to fire Employee-ID ${id} Name: ${name}?`,
-            icon: "warning",
-            buttons: [
-                "Cancel",
-                {
-                    text: "Yes, Fire",
-                    value: true,
-                    className: "swal-btn-danger"
-                }
-            ],
-            dangerMode: true,
-        }).then((willFire) => {
-            if (willFire) {
-                // Step 2: Ask for reason
-                swal({
-                    title: "Reason for Firing",
-                    text: "Please provide a reason for firing this employee:",
-                    content: {
-                        element: "input",
-                        attributes: {
-                            placeholder: "Enter reason...",
-                            type: "text"
-                        }
-                    },
-                    buttons: ["Cancel", {text: "Submit", value: true, className: "swal-btn-danger"}],
-                    dangerMode: true
-                }).then((reason) => {
-                    if (reason && reason.trim() !== "") {
-                        // Step 3: Send AJAX request
-                        swal({
-                            title: "Processing...",
-                            text: "Firing employee...",
-                            buttons: false,
-                            closeOnClickOutside: false,
-                            closeOnEsc: false,
-                            icon: "info"
-                        });
-                        $.ajax({
-                            url: '<?= $crm ?>shared/fire_employee.php',
-                            method: 'POST',
-                            data: {
-                                lead_id: id,
-                                reason: reason.trim()
-                            },
-                            success: function(response) {
-                                swal.close();
-                                if (response.success) {
-                                    toastr.success('Employee has been fired successfully');
-                                    loadPage(currentPage);
-                                } else {
-                                    toastr.error(response.error || 'Error firing employee');
-                                }
-                            },
-                            error: function(xhr, status, error) {
-                                swal.close();
-                                toastr.error('Error firing employee');
-                            }
-                        });
-                    } else if (reason !== null) {
-                        toastr.error('Please provide a reason for firing.');
-                    }
-                });
-            }
-        });
+        crmFireEmployee(id, name, '<?= $crm ?>', function () { loadPage(currentPage); });
     });
 
-    // Add CSS for swal-btn-danger if not present
-    if (!$('head style:contains(".swal-btn-danger")').length) {
-        $('head').append(`
-        <style>
-        .swal-btn-danger {
-            background: #d32f2f !important;
-            color: #fff !important;
-            border-radius: 8px !important;
-            border: none !important;
-            font-weight: 600 !important;
-        }
-        .swal-btn-danger:hover, .swal-btn-danger:focus {
-            background: #b71c1c !important;
-            color: #fff !important;
-        }
-        </style>
-        `);
-    }
 });
 </script>

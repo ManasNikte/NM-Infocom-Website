@@ -10,6 +10,7 @@
                   <div class="card-header">
                     <h3 class="text-primary">Team Management</h3>
                     <small class="text-muted">Manage team members</small>
+                    <button type="button" class="btn btn-primary btn-sm ml-auto" onclick="crmAddContent()"><i class="fas fa-plus mr-1"></i> Add team member</button>
                   </div>
                   <div class="card-body">
                     <div class="table-responsive table-responsive-data2">
@@ -345,12 +346,12 @@ function renderTable(teamData) {
     });
 }
 
-// Function to start polling
+// Keep the table current (crmLiveRefresh)
 function startPolling() {
     loadTableData(currentPage);
-    pollingInterval = setInterval(() => {
+    pollingInterval = crmLiveRefresh(() => {
         loadTableData(currentPage);
-    }, 3000);
+    });
 }
 
 // Event delegation for edit and delete buttons
@@ -364,59 +365,8 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Function to handle edit action
-function editTeamMember(id) {
-    console.log('Edit button clicked for ID:', id);
-    const item = (window.allTeamData || []).find(i => i.emp_id == id);
-    console.log('Found item:', item);
-    
-    if (!item) {
-        alert('Team member not found!');
-        return;
-    }
-    
-    // Set form values
-    document.getElementById('editEmpName').value = item.emp_name;
-    document.getElementById('editEmpPost').value = item.emp_post;
-    document.getElementById('editInstaLink').value = item.insta_link;
-    document.getElementById('editGithubLink').value = item.github_link;
-    document.getElementById('editLinkedinLink').value = item.linkedin_link;
-    document.getElementById('editXLink').value = item.x_link;
-    document.getElementById('editWebLink').value = item.web_link;
-    document.getElementById('editStatus').value = item.status;
-    document.getElementById('currentEmpImg').src = item.emp_img;
-    document.getElementById('editTeamForm').setAttribute('data-id', item.emp_id);
-    
-    // Show the modal
-    $('#editTeamModal').modal('show');
-}
 
-// Function to handle delete action
-function deleteTeamMember(id) {
-    if (confirm('Are you sure you want to delete this team member?')) {
-        console.log('Delete button clicked for ID:', id);
-        alert('Delete functionality would be implemented here (Demo only)');
-    }
-}
 
-// Handle form submission
-document.getElementById('editTeamForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    console.log('Form submitted');
-    const empId = this.getAttribute('data-id');
-    const empName = document.getElementById('editEmpName').value;
-    const empPost = document.getElementById('editEmpPost').value;
-    const instaLink = document.getElementById('editInstaLink').value;
-    const githubLink = document.getElementById('editGithubLink').value;
-    const linkedinLink = document.getElementById('editLinkedinLink').value;
-    const xLink = document.getElementById('editXLink').value;
-    const webLink = document.getElementById('editWebLink').value;
-    const status = document.getElementById('editStatus').value;
-    
-    console.log('Submitting:', { empId, empName, empPost, instaLink, githubLink, linkedinLink, xLink, webLink, status });
-    alert('Submitted!\nID: ' + empId + '\nName: ' + empName + '\nPost: ' + empPost + '\nStatus: ' + status + '\n(Demo only, not saved)');
-    $('#editTeamModal').modal('hide');
-});
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -433,7 +383,36 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('editTeamForm').reset();
     });
     
-    // Start polling
+    // Keep the table current (crmLiveRefresh)
     startPolling();
 });
+</script>
+
+<script>
+// Real create / edit / delete (data/content_admin.php); replaces the old demo-only handlers.
+(function () {
+  const resource = "team", pk = "emp_id", noun = "team member", labelField = "emp_name";
+  const fields = [{"label": "Name", "name": "emp_name", "type": "text", "required": true}, {"label": "Job title", "name": "emp_post", "type": "text", "required": true}, {"label": "Status", "name": "status", "type": "select", "required": true, "options": [["active", "Shown on the website"], ["inactive", "Hidden"]], "value": "active"}, {"label": "LinkedIn", "name": "linkedin_link", "type": "url", "required": false, "placeholder": "https://"}, {"label": "X / Twitter", "name": "x_link", "type": "url", "required": false, "placeholder": "https://"}, {"label": "Instagram", "name": "insta_link", "type": "url", "required": false, "placeholder": "https://"}, {"label": "GitHub", "name": "github_link", "type": "url", "required": false, "placeholder": "https://"}, {"label": "Website", "name": "web_link", "type": "url", "required": false, "placeholder": "https://"}];
+  const image = {"field": "emp_img", "label": "Photo", "required": true};
+  let rows = {};
+  const baseRender = window.renderTable;
+  window.renderTable = function (list) {
+    rows = {};
+    (list || []).forEach((r) => { rows[r[pk]] = r; });
+    return baseRender.apply(this, arguments);
+  };
+  const reload = () => (typeof loadTableData === 'function' ? loadTableData(typeof currentPage !== 'undefined' ? currentPage : 1) : location.reload());
+  const imageOpts = (rec) => image && { label: image.label, required: image.required, current: rec && rec[image.field] ? '../../../' + rec[image.field].replace(/^\.?\//, '') : '' };
+  function edit(id) {
+    const rec = rows[id];
+    if (!rec) return Swal.fire({ icon: 'info', title: 'Refresh the page', text: 'This item was changed or removed.' });
+    crmContentEditor({ resource, title: 'Edit ' + noun, fields, image: imageOpts(rec), record: Object.assign({ __id: rec[pk] }, rec), onDone: reload });
+  }
+  window.crmAddContent = function () {
+    crmContentEditor({ resource, title: 'Add ' + noun, fields, image: imageOpts(null), record: null, onDone: reload });
+  };
+  window["editTeamMember"] = edit;
+  
+  window["deleteTeamMember"] = (id) => crmContentDelete({ resource, id, label: (rows[id] && rows[id][labelField]) || noun, onDone: reload });
+})();
 </script>

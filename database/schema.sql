@@ -1,5 +1,4 @@
 -- NM INFOCOM database structure (no data). Import into an empty database, then run database/create_admin.php.
-/*M!999999\- enable the sandbox mode */ 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -28,30 +27,6 @@ CREATE TABLE `about_points` (
   `description` text NOT NULL,
   PRIMARY KEY (`about_pointsid`),
   KEY `about_id` (`about_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `benefits` (
-  `id` varchar(50) NOT NULL,
-  `title` varchar(100) NOT NULL,
-  `description` mediumtext NOT NULL,
-  `icon` varchar(50) NOT NULL,
-  `details` longtext NOT NULL CHECK (json_valid(`details`))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `blog_comments` (
-  `comment_id` int(11) NOT NULL,
-  `blog_id` int(11) NOT NULL,
-  `comment` text NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `date` date NOT NULL,
-  `time` time NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `status` enum('active','deleted') DEFAULT 'active',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -102,7 +77,8 @@ CREATE TABLE `careers` (
   `requirements` longtext NOT NULL CHECK (json_valid(`requirements`)),
   `date_added` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `last_modified` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_careers_deadline` (`deadline`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -128,7 +104,8 @@ CREATE TABLE `contact_submits` (
   `status` varchar(255) NOT NULL,
   `responded_on` timestamp(6) NULL DEFAULT NULL,
   `response_message` varchar(1000) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_contacts_added` (`added_on`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -156,7 +133,8 @@ CREATE TABLE `events` (
   `event_link` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-  PRIMARY KEY (`event_id`)
+  PRIMARY KEY (`event_id`),
+  KEY `idx_events_date` (`event_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -208,7 +186,8 @@ CREATE TABLE `job_applicants` (
   `pdf_link` varchar(255) NOT NULL,
   `status` enum('Applied','Shortlisted','Rejected') NOT NULL DEFAULT 'Applied',
   `date_applied` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_applicants_job` (`job_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -228,7 +207,10 @@ CREATE TABLE `leads` (
   `assigned_to` varchar(100) DEFAULT NULL,
   `added_by` varchar(100) DEFAULT NULL,
   `remarks` text DEFAULT NULL,
-  PRIMARY KEY (`lead_id`)
+  PRIMARY KEY (`lead_id`),
+  KEY `idx_leads_added_by` (`added_by`),
+  KEY `idx_leads_assigned_to` (`assigned_to`),
+  KEY `idx_leads_status_added` (`status`,`added_on`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -241,7 +223,8 @@ CREATE TABLE `leaves` (
   `end_date` date NOT NULL,
   `status` enum('approved','pending','rejected') DEFAULT 'pending',
   `action_by` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_leaves_user_status` (`user_id`,`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -334,7 +317,10 @@ CREATE TABLE `tasks` (
   `due_date` date DEFAULT NULL,
   `date_of_completion` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp(),
   `status` enum('in progress','pending','completed') DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_tasks_assignee_status` (`assigned_to`,`status`),
+  KEY `idx_tasks_assigner` (`assigned_by`),
+  KEY `idx_tasks_due` (`due_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -373,8 +359,10 @@ CREATE TABLE `users` (
   `fire_reason` text DEFAULT NULL,
   `password` varchar(255) NOT NULL,
   `last_login` timestamp NULL DEFAULT NULL,
+  `tokens_valid_after` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`)
+  UNIQUE KEY `email` (`email`),
+  KEY `idx_users_role_dept` (`role`,`sub_role`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -391,7 +379,8 @@ CREATE TABLE `vendor` (
   `date_added` date DEFAULT NULL,
   `last_modified` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `added_by` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_vendor_added_by` (`added_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;

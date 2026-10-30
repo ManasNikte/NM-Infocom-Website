@@ -147,7 +147,6 @@
           
         <!-- End the main code above this line -->
 
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
         <script>
             // Global variables for event management
             let currentEventId = null;
@@ -237,18 +236,22 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label for="swal-eventLocation" class="form-label text-start d-block">Location/Platform</label>
-                                    <input type="text" class="form-control" id="swal-eventLocation" value="${esc(eventData?.location || '')}">
+                                    <input type="text" class="form-control" id="swal-eventLocation" value="${esc(eventData?.event_location || eventData?.location || '')}">
                                 </div>
                             </div>
                             <div class="mb-3">
+                                <label for="swal-eventLink" class="form-label text-start d-block">Registration link (the website's Register button)</label>
+                                <input type="url" class="form-control" id="swal-eventLink" placeholder="https://" value="${esc(eventData?.event_link || '')}">
+                            </div>
+                            <div class="mb-3">
                                 <label for="swal-eventSpeakers" class="form-label text-start d-block">Speakers (comma separated)</label>
-                                <input type="text" class="form-control" id="swal-eventSpeakers" value="${eventData?.speakers ? eventData.speakers.join(', ') : ''}">
+                                <input type="text" class="form-control" id="swal-eventSpeakers" value="${esc(eventData?.speakers ? eventData.speakers.join(', ') : '')}">
                             </div>
                             <div class="mb-3">
                                 <label for="swal-eventImage" class="form-label text-start d-block">Event Image</label>
                                 <input type="file" class="form-control" id="swal-eventImage" accept="image/*">
                                 <div class="form-text">Recommended size: 800x450px. Max size: 2MB</div>
-                                ${eventData?.event_image ? `<div class="mt-2 text-center"><img src="../uploads/events/${esc(eventData.event_image)}" alt="Current Image" class="img-thumbnail" style="max-height: 150px;"></div>` : ''}
+                                ${eventData?.event_img ? `<div class="mt-2 text-center"><img src="../../../uploads/events/${esc(eventData.event_img)}" alt="Current Image" class="img-thumbnail" style="max-height: 150px;"></div>` : ''}
                             </div>
                         </div>
                     `,
@@ -281,6 +284,7 @@
                             mode,
                             location: document.getElementById('swal-eventLocation').value.trim(),
                             speakers: document.getElementById('swal-eventSpeakers').value.trim(),
+                            link: document.getElementById('swal-eventLink').value.trim(),
                             image: document.getElementById('swal-eventImage').files[0]
                         };
                     }
@@ -312,6 +316,7 @@
                     formData.append('eventMode', eventData.mode);
                     formData.append('eventLocation', eventData.location);
                     formData.append('eventSpeakers', eventData.speakers);
+                    formData.append('eventLink', eventData.link || '');
                     
                     if (isEdit && currentEventId) {
                         formData.append('eventId', currentEventId);
@@ -431,6 +436,7 @@
 
             // Main function to load table data
             function loadTableData(page = 1) {
+                loadTableData.lastArgs = arguments;
                 if (isLoading) return;
                 
                 console.log('Loading table data for page:', page);
@@ -564,6 +570,7 @@
                     isLoading = false;
                 });
             }
+            crmLiveRefresh(function () { loadTableData.apply(null, loadTableData.lastArgs || []); }); // keep current without polling
 
             // Helper function to update loading status
             function updateLoadingStatus(message) {
@@ -912,7 +919,7 @@
                             </td>
                             <td>
                                 <div class="event-image-container">
-                                    <img src="../../../uploads/events/${escapeHtml(event.image || 'default-event.jpg')}" 
+                                    <img src="${event.image ? '../../../uploads/events/' + escapeHtml(event.image) : '../../images/placeholder/image.svg'}" 
                                          alt="${escapeHtml(eventTitle)}" 
                                          class="img-fluid rounded"
                                          onerror="this.onerror=null; this.src='../../images/placeholder/image.svg'"
@@ -938,8 +945,8 @@
                                 <span class="badge bg-${typeClass}">${escapeHtml(eventType)}</span>
                             </td>
                             <td class="text-nowrap">
-                                <div class="fw-medium">${eventDate} ${timingBadge}</div>
-                                <div class="small text-muted">${eventTime}</div>
+                                <div class="fw-medium">${esc(eventDate)} ${timingBadge}</div>
+                                <div class="small text-muted">${esc(eventTime)}</div>
                             </td>
                             <td>${escapeHtml(event.location || 'N/A')}</td>
                             <td>${escapeHtml(eventSpeakers)}</td>

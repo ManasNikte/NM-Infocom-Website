@@ -127,7 +127,7 @@ try {
     http_response_code(500);
     $response = [
         'success' => false,
-        'message' => 'Error: ' . $e->getMessage(),
+        'message' => crm_public_error($e),
         'data' => []
     ];
     error_log('Error in contact_submits_data.php: ' . $e->getMessage());

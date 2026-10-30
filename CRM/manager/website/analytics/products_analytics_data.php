@@ -14,8 +14,8 @@ try {
 
     // This month
     $monthStart = date('Y-m-01');
-    $lastMonthStart = date('Y-m-01', strtotime('-1 month'));
-    $lastMonthEnd = date('Y-m-t', strtotime('-1 month'));
+    $lastMonthStart = date('Y-m-01', strtotime('first day of last month'));
+    $lastMonthEnd = date('Y-m-t', strtotime('first day of last month'));
 
     // This year
     $yearStart = date('Y-01-01');
@@ -76,7 +76,7 @@ try {
         ]
     ]);
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'error' => crm_public_error($e)]);
 }
 finally {
     if (isset($conn)) {

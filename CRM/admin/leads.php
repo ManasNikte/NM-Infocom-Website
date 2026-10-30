@@ -573,6 +573,7 @@ $(function() {
   loadEmployeeFilter();
 
   function loadLeads(page = 1) {
+      loadLeads.lastArgs = arguments;
     $.get('./data/sales_data.php', {
       page,
       search: searchTerm,
@@ -592,6 +593,7 @@ $(function() {
       }
     }, 'json');
     }
+  crmLiveRefresh(function () { loadLeads.apply(null, loadLeads.lastArgs || []); }); // keep current without polling
 
     // Pagination click
   $(document).on('click', '#paginationContainer .page-link', function(e) {
@@ -682,11 +684,11 @@ $(function() {
     Swal.fire({
       title: 'Edit Lead',
       html: `
-        <input id="swal-edit-name" class="swal2-input" placeholder="Name" value="${name}">
-        <input id="swal-edit-contact" class="swal2-input" placeholder="Contact" value="${contact}">
-        <input id="swal-edit-email" class="swal2-input" placeholder="Email" value="${email}">
-        <input id="swal-edit-product" class="swal2-input" placeholder="Product" value="${product}">
-        <input id="swal-edit-quantity" class="swal2-input" type="number" min="1" placeholder="Quantity" value="${quantity}">
+        <input id="swal-edit-name" class="swal2-input" placeholder="Name" value="${esc(name)}">
+        <input id="swal-edit-contact" class="swal2-input" placeholder="Contact" value="${esc(contact)}">
+        <input id="swal-edit-email" class="swal2-input" placeholder="Email" value="${esc(email)}">
+        <input id="swal-edit-product" class="swal2-input" placeholder="Product" value="${esc(product)}">
+        <input id="swal-edit-quantity" class="swal2-input" type="number" min="1" placeholder="Quantity" value="${esc(quantity)}">
       `,
       focusConfirm: false,
       showCancelButton: true,
@@ -805,6 +807,7 @@ $(function() {
 
   // Load stats cards
   function loadStatsCards() {
+      loadStatsCards.lastArgs = arguments;
     $.get('./data/sales_data.php?stats=1', function(response) {
       if (response.success && response.stats) {
         $('#statNewLeads').text(response.stats.new_leads);
@@ -814,6 +817,7 @@ $(function() {
       }
     }, 'json');
   }
+  crmLiveRefresh(function () { loadStatsCards.apply(null, loadStatsCards.lastArgs || []); }); // keep current without polling
   loadStatsCards();
 
   // Call loadStatsCards after any action that may change stats
@@ -894,12 +898,12 @@ $(document).on('click', '.reallot-vendor-btn', function() {
 // Shared function for allot/reallot vendor
 function openVendorAllotModal(leadId, isReallot = false) {
   $.ajax({
-    url: './data/vendors_data.php',
+    url: './data/vendor_list.php',
     method: 'GET',
     dataType: 'json',
     success: function(response) {
-      if (response.success && Array.isArray(response.data)) {
-        let options = response.data.map(v => `<option value='${esc(v.vendor_id)}'>${esc(v.supplier_name)}</option>`).join('');
+      if (response.success && Array.isArray(response.vendors)) {
+        let options = response.vendors.map(v => `<option value='${esc(v.id)}'>${esc(v.supplier_name)}</option>`).join('');
         Swal.fire({
           title: isReallot ? 'Reallot Vendor' : 'Allot Vendor',
           html: `<select id='swal-vendor-select' class='swal2-input'>${options}</select>`,

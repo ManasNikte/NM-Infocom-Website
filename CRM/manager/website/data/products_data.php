@@ -61,7 +61,7 @@ try {
             $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
             returnJsonSuccess('Categories loaded successfully', ['categories' => $categories]);
         } catch (Exception $e) {
-            returnJsonError('Failed to load categories: ' . $e->getMessage());
+            returnJsonError(crm_public_error($e));
         }
     }
 
@@ -148,7 +148,7 @@ try {
                 returnJsonSuccess('Product added successfully', ['product_id' => $productId]);
                 
             } catch (Exception $e) {
-                returnJsonError('Failed to add product: ' . $e->getMessage());
+                returnJsonError(crm_public_error($e));
             }
         }
 
@@ -177,82 +177,51 @@ try {
                     throw new Exception('Valid cost is required');
                 }
                 
-                // Get current PDF path
-                $currentPdfPath = null;
-                $getSql = "SELECT catalogue_pdf FROM products WHERE product_id = :id";
-                $getStmt = $conn->prepare($getSql);
+                $getStmt = $conn->prepare('SELECT catalogue_pdf, cover_image FROM products WHERE product_id = :id');
                 $getStmt->execute([':id' => $id]);
                 $currentProduct = $getStmt->fetch(PDO::FETCH_ASSOC);
-                if ($currentProduct) {
-                    $currentPdfPath = $currentProduct['catalogue_pdf'];
+                if (!$currentProduct) {
+                    throw new Exception('Product not found');
                 }
-                
-                // Handle PDF upload if provided
-                $pdfPath = $currentPdfPath; // Keep current path by default
-                if (isset($_FILES['pdf']) && $_FILES['pdf']['error'] === UPLOAD_ERR_OK) {
-                    // Delete old PDF if exists
-                    if ($currentPdfPath) {
-                        crm_delete_upload($currentPdfPath, 'catalogue');
+
+                // New files are stored first; old ones are deleted only once the database points at the new ones.
+                $newPdf = $newCover = null;
+                try {
+                    if (isset($_FILES['pdf']) && $_FILES['pdf']['error'] === UPLOAD_ERR_OK) {
+                        $newPdf = handlePdfUpload($_FILES['pdf'], $id);
                     }
-                    
-                    // Upload new PDF
-                    $pdfPath = handlePdfUpload($_FILES['pdf'], $id);
+                    if (isset($_FILES['cover_image']) && $_FILES['cover_image']['error'] === UPLOAD_ERR_OK) {
+                        $newCover = 'uploads/products/' . crm_store_upload($_FILES['cover_image'], 'products', 'cover_', CRM_IMAGE_TYPES, 5 * 1024 * 1024);
+                    }
+                    $stmt = $conn->prepare('UPDATE products SET product_name = :name, category_id = :category_id, product_cost = :cost, catalogue_pdf = :pdf,
+                                                   cover_image = :cover, product_description = :description, product_status = :status, last_modified = NOW()
+                                            WHERE product_id = :id');
+                    $stmt->execute([
+                        ':name' => $name,
+                        ':category_id' => $category_id,
+                        ':cost' => $cost,
+                        ':pdf' => $newPdf ?? $currentProduct['catalogue_pdf'],
+                        ':cover' => $newCover ?? $currentProduct['cover_image'],
+                        ':description' => $description,
+                        ':status' => $status,
+                        ':id' => $id,
+                    ]);
+                } catch (Exception $uploadOrDb) {
+                    if ($newPdf) crm_delete_upload($newPdf, 'catalogue');
+                    if ($newCover) crm_delete_upload($newCover, 'products');
+                    throw $uploadOrDb;
                 }
-                
-                $sql = "UPDATE products SET product_name=:name, category_id=:category_id, product_cost=:cost, catalogue_pdf=:pdf, product_description=:description, product_status=:status, last_modified=NOW() WHERE product_id=:id";
-                $stmt = $conn->prepare($sql);
-                $result = $stmt->execute([
-                    ':name' => $name,
-                    ':category_id' => $category_id,
-                    ':cost' => $cost,
-                    ':pdf' => $pdfPath,
-                    ':description' => $description,
-                    ':status' => $status,
-                    ':id' => $id
-                ]);
-                
-                if (!$result) {
-                    throw new Exception('Database error: ' . implode(', ', $stmt->errorInfo()));
+                if ($newPdf && $currentProduct['catalogue_pdf']) {
+                    crm_delete_upload($currentProduct['catalogue_pdf'], 'catalogue');
                 }
-                
-                $coverImagePath = null;
-                if (isset($_FILES['cover_image']) && $_FILES['cover_image']['error'] === UPLOAD_ERR_OK) {
-                    // Delete old cover image if exists
-                    $currentCoverImagePath = null;
-                    $getSql = "SELECT cover_image FROM products WHERE product_id = :id";
-                    $getStmt = $conn->prepare($getSql);
-                    $getStmt->execute([':id' => $id]);
-                    $currentProduct = $getStmt->fetch(PDO::FETCH_ASSOC);
-                    if ($currentProduct) {
-                        $currentCoverImagePath = $currentProduct['cover_image'];
-                    }
-                    if ($currentCoverImagePath) {
-                        crm_delete_upload($currentCoverImagePath, 'products');
-                    }
-                    
-                    // Upload new cover image
-                    $coverImagePath = 'uploads/products/'
-                        . crm_store_upload($_FILES['cover_image'], 'products', 'cover_', CRM_IMAGE_TYPES, 5 * 1024 * 1024);
-                } else {
-                    // Keep existing cover image if no new one is uploaded
-                    $getSql = "SELECT cover_image FROM products WHERE product_id = :id";
-                    $getStmt = $conn->prepare($getSql);
-                    $getStmt->execute([':id' => $id]);
-                    $currentProduct = $getStmt->fetch(PDO::FETCH_ASSOC);
-                    if ($currentProduct) {
-                        $coverImagePath = $currentProduct['cover_image'];
-                    }
+                if ($newCover && $currentProduct['cover_image']) {
+                    crm_delete_upload($currentProduct['cover_image'], 'products');
                 }
-                
-                // Save $coverImagePath to the database in a new column (e.g., `cover_image`)
-                $updateSql = "UPDATE products SET cover_image = :cover_image WHERE product_id = :id";
-                $updateStmt = $conn->prepare($updateSql);
-                $updateStmt->execute([':cover_image' => $coverImagePath, ':id' => $id]);
-                
+
                 returnJsonSuccess('Product updated successfully');
                 
             } catch (Exception $e) {
-                returnJsonError('Failed to update product: ' . $e->getMessage());
+                returnJsonError(crm_public_error($e));
             }
         }
 
@@ -266,8 +235,7 @@ try {
                 }
                 
                 // Get PDF path before deletion
-                $getSql = "SELECT catalogue_pdf FROM products WHERE product_id = :id";
-                $getStmt = $conn->prepare($getSql);
+                $getStmt = $conn->prepare('SELECT catalogue_pdf, cover_image FROM products WHERE product_id = :id');
                 $getStmt->execute([':id' => $id]);
                 $product = $getStmt->fetch(PDO::FETCH_ASSOC);
                 
@@ -284,11 +252,14 @@ try {
                 if ($product && $product['catalogue_pdf']) {
                     crm_delete_upload($product['catalogue_pdf'], 'catalogue');
                 }
+                if ($product && $product['cover_image']) {
+                    crm_delete_upload($product['cover_image'], 'products');
+                }
                 
                 returnJsonSuccess('Product deleted successfully');
                 
             } catch (Exception $e) {
-                returnJsonError('Failed to delete product: ' . $e->getMessage());
+                returnJsonError(crm_public_error($e));
             }
         }
 
@@ -374,7 +345,7 @@ try {
     echo json_encode($response);
 
 } catch (Exception $e) {
-    returnJsonError('Server error: ' . $e->getMessage());
+    returnJsonError(crm_public_error($e));
 } finally {
     if (isset($db)) {
         $db->closeConnection();

@@ -19,8 +19,8 @@ try {
     $db = new Database();
     $conn = $db->getConnection();
     $stmt = $conn->prepare("DELETE FROM vendor WHERE id = ?");
-    $stmt->execute([$vendor_id]);
-    echo json_encode(['success' => true, 'message' => 'Vendor deleted successfully']);
+    $stmt->execute([(int) ltrim((string) $vendor_id, 'Vv')]);
+    echo json_encode($stmt->rowCount() > 0 ? ['success' => true, 'message' => 'Vendor deleted successfully'] : ['success' => false, 'message' => 'Vendor not found']);
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => crm_public_error($e)]);
 } 

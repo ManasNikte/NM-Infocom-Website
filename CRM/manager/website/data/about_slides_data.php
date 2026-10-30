@@ -69,10 +69,10 @@ try {
     $response['slides'] = $formattedSlides;
 
 } catch (PDOException $e) {
-    $response['message'] = 'Database error: ' . $e->getMessage();
+    $response['message'] = crm_public_error($e);
     error_log('Database error in about_slides_data.php: ' . $e->getMessage());
 } catch (Exception $e) {
-    $response['message'] = 'Error: ' . $e->getMessage();
+    $response['message'] = crm_public_error($e);
     error_log('Error in about_slides_data.php: ' . $e->getMessage());
 }
 
@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $response['message'] = 'About section deleted successfully';
                 } catch (PDOException $e) {
                     $response['success'] = false;
-                    $response['message'] = 'Error deleting about section: ' . $e->getMessage();
+                    $response['message'] = 'Error deleting about section: ' . crm_public_error($e);
                 }
                 break;
 

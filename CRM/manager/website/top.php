@@ -16,9 +16,6 @@ $section = [
         ['events.php', 'fas fa-calendar', 'Events'],
         ['nm_newsletter.php', 'fas fa-newspaper', 'NM Newsletter'],
         ['nm_web_data.php', 'fas fa-globe', 'NM Web Data'],
-        ['witjab_portfolio.php', 'fas fa-briefcase', 'WitJab Portfolio'],
-        ['witjab_reviews.php', 'fas fa-star-half-alt', 'WitJab Reviews'],
-        ['witjab_web_data.php', 'fas fa-globe-asia', 'WitJab Web Data'],
     ],
 ];
 require __DIR__ . '/../../layout/top.php';

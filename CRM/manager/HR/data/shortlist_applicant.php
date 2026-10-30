@@ -18,5 +18,5 @@ try {
         echo json_encode(['success' => true]);
     }
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => crm_public_error($e)]);
 } 

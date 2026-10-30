@@ -3,8 +3,6 @@ require_once __DIR__ . '/../../../config/auth.php';
 $auth = crm_require_api(['Admin', 'Manager'], 'website');
 
 // Set error logging
-ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../../logs/categories_error.log');
 
 // Create logs directory if it doesn't exist
 if (!is_dir(__DIR__ . '/../../logs')) {
@@ -12,7 +10,6 @@ if (!is_dir(__DIR__ . '/../../logs')) {
 }
 
 // Log the start of the script
-error_log("=== Starting categories_data.php ===");
 
 try {
 } catch (Exception $e) {
@@ -26,7 +23,6 @@ header('Content-Type: application/json');
 function returnJsonError($message, $code = 500) {
     http_response_code($code);
     $error = ['success' => false, 'message' => $message];
-    error_log("Returning error: " . print_r($error, true));
     echo json_encode($error);
     exit;
 }
@@ -41,7 +37,6 @@ try {
     }
     
     // Log the request for debugging
-    error_log('Categories API Request: ' . print_r($_POST, true));
     
     // Handle different actions
     $action = $_POST['action'] ?? '';
@@ -85,7 +80,6 @@ try {
                 LIMIT :limit OFFSET :offset
             ";
             
-            error_log('Executing SQL: ' . $sql . ' with limit: ' . $perPage . ', offset: ' . $offset);
             
             $stmt = $pdo->prepare($sql);
             $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
@@ -99,7 +93,6 @@ try {
             }
             
             $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            error_log('Found ' . count($categories) . ' categories (page ' . $page . ' of ' . $totalPages . ')');
             
             echo json_encode([
                 'success' => true, 

@@ -8,7 +8,7 @@ try {
     $db = new Database();
     $pdo = $db->getConnection();
 } catch (Exception $e) {
-    die(json_encode(['success' => false, 'message' => 'Database connection failed: ' . $e->getMessage()]));
+    die(json_encode(['success' => false, 'message' => crm_public_error($e)]));
 }
 
 $employee_id = null;

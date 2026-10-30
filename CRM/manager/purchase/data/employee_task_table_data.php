@@ -87,8 +87,6 @@ try {
     $offset = ($page - 1) * $items_per_page;
 
     $sql .= " ORDER BY t.id DESC LIMIT :limit OFFSET :offset";
-    error_log('EMPLOYEE TASK SQL: ' . $sql);
-    error_log('EMPLOYEE TASK PARAMS: ' . print_r($params, true));
     $stmt = $conn->prepare($sql);
     if (isset($params[':status'])) $stmt->bindValue(':status', $params[':status']);
     $stmt->bindValue(':search_task', $params[':search_task']);

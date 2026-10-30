@@ -2,7 +2,6 @@
 require_once './top.php';
 $includeOnly = true;
 ?>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
 <!-- MAIN CONTENT-->
 <div class="main-content" style="min-height: 100vh;">
   <div class="section__content section__content--p30">
@@ -282,8 +281,6 @@ $includeOnly = true;
 
 <?php require './bottom.php'; ?>
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js"></script>
 
 <style>
 /* Copy and adapt the card, table, filter, badge, and responsive CSS from leads.php here. Adjust column widths and selectors for vendor-specific columns. */
@@ -1066,11 +1063,11 @@ $includeOnly = true;
             };
         }
 
-        // Start polling
+        // Keep the table current (crmLiveRefresh)
         function startPolling() {
-            pollingInterval = setInterval(function() {
+            pollingInterval = crmLiveRefresh(function() {
                 loadPage(currentPage, true);
-            }, 3000);
+            });
         }
 
         // Pause polling
@@ -1094,7 +1091,7 @@ $includeOnly = true;
             function() { resumePolling(); }
         );
 
-        // Start polling
+        // Keep the table current (crmLiveRefresh)
         startPolling();
 
         // Clean up on page unload
@@ -1429,7 +1426,7 @@ $includeOnly = true;
                             `${esc(response.total_orders)} Completed Orders`
                         );
                         modal.find('#vendorDetailsHeader').html(
-                            `<strong>${vendorId}</strong> - ${vendorName}`
+                            `<strong>${esc(vendorId)}</strong> - ${esc(vendorName)}`
                         );
                     } else {
                         tableBody.html(

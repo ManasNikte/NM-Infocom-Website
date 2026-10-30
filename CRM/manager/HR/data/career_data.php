@@ -65,34 +65,13 @@ try {
         exit;
     }
     
-    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-    $itemsPerPage = isset($_GET['rowsPerPage']) ? (int)$_GET['rowsPerPage'] : 5;
+    $page = max(1, (int) ($_GET['page'] ?? 1));
+    $itemsPerPage = min(100, max(1, (int) ($_GET['rowsPerPage'] ?? 5)));
     $data = getCareerData($page, $itemsPerPage);
 
     echo json_encode($data);
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode(['error' => crm_public_error($e)]);
 }
 exit;
-?>
-
-<script>
-    const currentPage = 1;
-    const rowsPerPage = 5;
-
-    fetch(`./data/career_data.php?page=${currentPage}&rowsPerPage=${rowsPerPage}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Handle the data
-            console.log(data);
-        })
-        .catch(error => {
-            console.error('Error fetching data:', error);
-        });
-</script>

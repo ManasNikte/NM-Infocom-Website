@@ -36,7 +36,7 @@ $name = $_POST['name'] ?? '';
 $contact = $_POST['contact'] ?? '';
 $email = $_POST['email'] ?? '';
 $product = $_POST['product'] ?? '';
-$quantity = $_POST['quantity'] ?? 1;
+$quantity = max(1, (int) ($_POST['quantity'] ?? 1));
 
 if (!$lead_id || !$name || !$contact || !$product) {
     http_response_code(400);
@@ -47,7 +47,8 @@ if (!$lead_id || !$name || !$contact || !$product) {
 try {
     $db = new Database();
     $pdo = $db->getConnection();
-    $stmt = $pdo->prepare("UPDATE leads SET name = ?, contact = ?, email = ?, product = ?, quantity = ?, modified = NOW() WHERE lead_id = ?");
+    $stmt = $pdo->prepare("UPDATE leads SET name = ?, contact = ?, email = ?, product = ?, quantity = ?, modified = NOW()
+                           WHERE lead_id = ? AND added_by IN (SELECT id FROM users WHERE sub_role = 'marketing')");
     $success = $stmt->execute([$name, $contact, $email, $product, $quantity, $lead_id]);
     if ($success && $stmt->rowCount() > 0) {
         echo json_encode(['success' => true, 'message' => 'Lead updated successfully']);
@@ -57,5 +58,5 @@ try {
     }
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => crm_public_error($e)]);
 } 

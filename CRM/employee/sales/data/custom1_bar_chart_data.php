@@ -9,8 +9,15 @@ $db = new Database();
 $conn = $db->getConnection();
 
 // Get date range from GET params
-$start_date = $_GET['start_date'] ?? null;
-$end_date = $_GET['end_date'] ?? null;
+$validDate = function ($d) {
+    $dt = $d ? DateTime::createFromFormat('Y-m-d', (string) $d) : false;
+    return $dt && $dt->format('Y-m-d') === $d && $d >= '2000-01-01' ? $d : null;
+};
+$start_date = $validDate($_GET['start_date'] ?? null);
+$end_date = $validDate($_GET['end_date'] ?? null);
+if ($start_date && $end_date && $start_date > $end_date) {
+    [$start_date, $end_date] = [$end_date, $start_date];
+}
 $where = 'WHERE assigned_to = ?';
 $params = [$user_id];
 

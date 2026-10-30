@@ -51,5 +51,5 @@ try {
         'rejected' => $rejected
     ]);
 } catch (Exception $e) {
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode(['error' => crm_public_error($e)]);
 } 

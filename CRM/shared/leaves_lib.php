@@ -44,7 +44,7 @@ function crm_leave_input_error($reason, $start, $end) {
     }
     $s = DateTime::createFromFormat('Y-m-d', $start);
     $e = DateTime::createFromFormat('Y-m-d', $end);
-    if (!$s || !$e) {
+    if (!$s || !$e || $s->format('Y-m-d') !== $start || $e->format('Y-m-d') !== $end) {
         return 'Invalid date format.';
     }
     if ($e < $s) {

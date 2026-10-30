@@ -54,7 +54,7 @@ try {
         try {
             $resume = 'uploads/resume/' . crm_store_upload($_FILES['resume'], 'resume', 'EMP_', CRM_PDF_TYPES, 5 * 1024 * 1024);
         } catch (RuntimeException $e) {
-            add_user_fail('Resume: ' . $e->getMessage());
+            add_user_fail('Resume: ' . crm_public_error($e));
         }
     }
 

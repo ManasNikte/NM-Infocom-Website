@@ -26,35 +26,35 @@ if (isset($user) && isset($user['id']) && strtolower($user['role']) === 'manager
         $db = new Database();
         $pdo = $db->getConnection();
         // Leads added today
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE DATE(added_on) = CURDATE()");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE added_by IN (SELECT id FROM users WHERE sub_role = 'marketing') AND DATE(added_on) = CURDATE()");
         $stmt->execute();
         $leads_today = (int)$stmt->fetchColumn();
         // Leads added yesterday
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE DATE(added_on) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE added_by IN (SELECT id FROM users WHERE sub_role = 'marketing') AND DATE(added_on) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)");
         $stmt->execute();
         $leads_yesterday = (int)$stmt->fetchColumn();
         // Leads added this month
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE YEAR(added_on) = YEAR(CURDATE()) AND MONTH(added_on) = MONTH(CURDATE())");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE added_by IN (SELECT id FROM users WHERE sub_role = 'marketing') AND YEAR(added_on) = YEAR(CURDATE()) AND MONTH(added_on) = MONTH(CURDATE())");
         $stmt->execute();
         $leads_month = (int)$stmt->fetchColumn();
         // Leads added last month
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE YEAR(added_on) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(added_on) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE added_by IN (SELECT id FROM users WHERE sub_role = 'marketing') AND YEAR(added_on) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(added_on) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))");
         $stmt->execute();
         $leads_last_month = (int)$stmt->fetchColumn();
         // Positive leads this month
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE response = 'positive' AND YEAR(added_on) = YEAR(CURDATE()) AND MONTH(added_on) = MONTH(CURDATE())");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE added_by IN (SELECT id FROM users WHERE sub_role = 'marketing') AND response = 'positive' AND YEAR(added_on) = YEAR(CURDATE()) AND MONTH(added_on) = MONTH(CURDATE())");
         $stmt->execute();
         $positive_month = (int)$stmt->fetchColumn();
         // Positive leads last month
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE response = 'positive' AND YEAR(added_on) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(added_on) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE added_by IN (SELECT id FROM users WHERE sub_role = 'marketing') AND response = 'positive' AND YEAR(added_on) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(added_on) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))");
         $stmt->execute();
         $positive_last_month = (int)$stmt->fetchColumn();
         // Negative leads this month
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE response = 'negative' AND YEAR(added_on) = YEAR(CURDATE()) AND MONTH(added_on) = MONTH(CURDATE())");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE added_by IN (SELECT id FROM users WHERE sub_role = 'marketing') AND response = 'negative' AND YEAR(added_on) = YEAR(CURDATE()) AND MONTH(added_on) = MONTH(CURDATE())");
         $stmt->execute();
         $negative_month = (int)$stmt->fetchColumn();
         // Negative leads last month
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE response = 'negative' AND YEAR(added_on) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(added_on) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE added_by IN (SELECT id FROM users WHERE sub_role = 'marketing') AND response = 'negative' AND YEAR(added_on) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(added_on) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))");
         $stmt->execute();
         $negative_last_month = (int)$stmt->fetchColumn();
     } catch (Exception $e) {

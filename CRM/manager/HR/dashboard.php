@@ -431,96 +431,102 @@ require_once './top.php';
 <!-- Add necessary JavaScript -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Applicants Overview Line Chart
-        fetch('data/applicants_line_chart_data.php')
-            .then(response => response.json())
-            .then(data => {
-                const ctx = document.getElementById('customBarChart').getContext('2d');
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: data.labels,
-                        datasets: [
-                            {
-                                label: 'Applicants',
-                                data: data.applicants,
-                                borderColor: 'rgba(0, 123, 255, 1)',
-                                backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                                fill: false,
-                                tension: 0.3,
-                                pointBackgroundColor: 'rgba(0, 123, 255, 1)',
-                                pointBorderColor: 'rgba(0, 123, 255, 1)',
-                                pointRadius: 5
-                            },
-                            {
-                                label: 'Shortlisted',
-                                data: data.shortlisted,
-                                borderColor: 'rgba(40, 167, 69, 1)',
-                                backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                                fill: false,
-                                tension: 0.3,
-                                pointBackgroundColor: 'rgba(40, 167, 69, 1)',
-                                pointBorderColor: 'rgba(40, 167, 69, 1)',
-                                pointRadius: 5
-                            },
-                            {
-                                label: 'Rejected',
-                                data: data.rejected,
-                                borderColor: 'rgba(220, 53, 69, 1)',
-                                backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                                fill: false,
-                                tension: 0.3,
-                                pointBackgroundColor: 'rgba(220, 53, 69, 1)',
-                                pointBorderColor: 'rgba(220, 53, 69, 1)',
-                                pointRadius: 5
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: true },
-                            tooltip: { enabled: true }
+        // Chart data; re-run by crmLiveRefresh when the tab comes back or another tab saves a change.
+        function crmLoadCharts() {
+            // Applicants Overview Line Chart
+            fetch('data/applicants_line_chart_data.php')
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById('customBarChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: data.labels,
+                            datasets: [
+                                {
+                                    label: 'Applicants',
+                                    data: data.applicants,
+                                    borderColor: 'rgba(0, 123, 255, 1)',
+                                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                                    fill: false,
+                                    tension: 0.3,
+                                    pointBackgroundColor: 'rgba(0, 123, 255, 1)',
+                                    pointBorderColor: 'rgba(0, 123, 255, 1)',
+                                    pointRadius: 5
+                                },
+                                {
+                                    label: 'Shortlisted',
+                                    data: data.shortlisted,
+                                    borderColor: 'rgba(40, 167, 69, 1)',
+                                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                    fill: false,
+                                    tension: 0.3,
+                                    pointBackgroundColor: 'rgba(40, 167, 69, 1)',
+                                    pointBorderColor: 'rgba(40, 167, 69, 1)',
+                                    pointRadius: 5
+                                },
+                                {
+                                    label: 'Rejected',
+                                    data: data.rejected,
+                                    borderColor: 'rgba(220, 53, 69, 1)',
+                                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                                    fill: false,
+                                    tension: 0.3,
+                                    pointBackgroundColor: 'rgba(220, 53, 69, 1)',
+                                    pointBorderColor: 'rgba(220, 53, 69, 1)',
+                                    pointRadius: 5
+                                }
+                            ]
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: { color: 'rgba(0, 0, 0, 0.05)' },
-                                ticks: { font: { size: 12 } }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: true },
+                                tooltip: { enabled: true }
                             },
-                            x: {
-                                grid: { display: false },
-                                ticks: { font: { size: 12 } }
-                            }
-                        },
-                        animation: { duration: 2000, easing: 'easeInOutQuart' },
-                        layout: { padding: { left: 10, right: 10, top: 10, bottom: 10 } }
-                    }
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                                    ticks: { font: { size: 12 } }
+                                },
+                                x: {
+                                    grid: { display: false },
+                                    ticks: { font: { size: 12 } }
+                                }
+                            },
+                            animation: { duration: 2000, easing: 'easeInOutQuart' },
+                            layout: { padding: { left: 10, right: 10, top: 10, bottom: 10 } }
+                        }
+                    });
                 });
-            });
 
         
-        // Load pie chart data
-        fetch('../../shared/task_status.php')
-            .then(response => response.json())
-            .then(data => {
-                initPieChart(data);
-            });
+            // Load pie chart data
+            fetch('../../shared/task_status.php')
+                .then(response => response.json())
+                .then(data => {
+                    initPieChart(data);
+                });
         
-        // Load pie chart data for Manager Tasks
-        fetch('../../shared/task_status.php?mine=1')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${esc(response.status)}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Received data:', data);
-                initPieChartManager('managerTaskChart', data);
-            })
-            .catch(error => console.error('Error fetching data:', error));
+            // Load pie chart data for Manager Tasks
+            fetch('../../shared/task_status.php?mine=1')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${esc(response.status)}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Received data:', data);
+                    initPieChartManager('managerTaskChart', data);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+
+        }
+        crmLoadCharts();
+        crmLiveRefresh(crmLoadCharts);
 
         function initPieChart(data) {
             if (!document.getElementById('taskStatusChart')) return; // HR has no employee task chart
@@ -889,6 +895,7 @@ require_once './top.php';
 
         // Initial load
         loadTasks(currentPage, '', 'all');
+        crmLiveRefresh(function () { loadTasks(currentPage, searchInput.value, currentStatus); });
 
         // Status update functionality
         function addStatusSelectListeners() {

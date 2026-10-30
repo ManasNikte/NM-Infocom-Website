@@ -72,6 +72,6 @@ try {
     
 } catch (Exception $e) {
     header('HTTP/1.1 500 Internal Server Error');
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode(['error' => crm_public_error($e)]);
 }
 ?>

@@ -1,7 +1,6 @@
 <?php 
 require_once './top.php';
 ?>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
       <!-- MAIN CONTENT-->
       <div class="main-content">
         <div class="section__content section__content--p30">
@@ -769,6 +768,7 @@ $(document).ready(function() {
     }
 
     function loadPage(page = 1, search = '', status = '', response = '') {
+        loadPage.lastArgs = arguments;
         $.ajax({
             url: './data/sales_data.php',
             method: 'GET',
@@ -794,6 +794,7 @@ $(document).ready(function() {
             }
         });
     }
+    crmLiveRefresh(function () { loadPage.apply(null, loadPage.lastArgs || []); }); // keep current without polling
 
     // Pagination click
     $(document).on('click', '.page-nav', function(e) {
@@ -862,11 +863,11 @@ $(document).ready(function() {
         Swal.fire({
             title: 'Edit Order',
             html: `
-                <input id="swal-edit-name" class="swal2-input" placeholder="Name" value="${name}">
-                <input id="swal-edit-contact" class="swal2-input" placeholder="Contact" value="${contact}">
-                <input id="swal-edit-email" class="swal2-input" placeholder="Email" value="${email}">
-                <input id="swal-edit-product" class="swal2-input" placeholder="Product" value="${product}">
-                <input id="swal-edit-quantity" class="swal2-input" type="number" min="1" placeholder="Quantity" value="${quantity}">
+                <input id="swal-edit-name" class="swal2-input" placeholder="Name" value="${esc(name)}">
+                <input id="swal-edit-contact" class="swal2-input" placeholder="Contact" value="${esc(contact)}">
+                <input id="swal-edit-email" class="swal2-input" placeholder="Email" value="${esc(email)}">
+                <input id="swal-edit-product" class="swal2-input" placeholder="Product" value="${esc(product)}">
+                <input id="swal-edit-quantity" class="swal2-input" type="number" min="1" placeholder="Quantity" value="${esc(quantity)}">
             `,
             focusConfirm: false,
             showCancelButton: true,
