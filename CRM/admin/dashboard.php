@@ -11,7 +11,6 @@
         </div>
         <div class="crm-hero-actions">
         <a class="btn btn-sm" href="workspaces.php"><i class="fas fa-th-large mr-1"></i> Work as any role</a>
-        <button type="button" class="btn btn-sm" id="admTestMail"><i class="fas fa-paper-plane mr-1"></i> Send test email</button>
         <label class="adm-range">Trend range
           <select id="admRange" class="form-control form-control-sm">
             <option value="6">Last 6 months</option>
@@ -167,13 +166,6 @@
   }
 
   $('#admRange').on('change', load);
-  $('#admTestMail').on('click', function () {
-    const btn = $(this).prop('disabled', true);
-    $.post('data/send_test_email.php')
-      .done((r) => Swal.fire({ icon: r.success ? 'success' : 'error', title: r.success ? 'Email sent' : 'Email failed', text: r.message }))
-      .fail((xhr) => Swal.fire({ icon: 'error', title: 'Email failed', text: (xhr.responseJSON && xhr.responseJSON.message) || 'Request failed' }))
-      .always(() => btn.prop('disabled', false));
-  });
   $(load);
 })();
 </script>

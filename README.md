@@ -8,6 +8,8 @@ shell in the CRM.
 
 ![Homepage](docs/screenshots/01-home-hero.png)
 
+> **Using the CRM?** Start with the [CRM user guide](docs/CRM-USER-GUIDE.md): every role, every feature, step by step.
+>
 > A full write-up of the recent redesign, security work and testing is in [docs/REPORT.md](docs/REPORT.md).
 
 ---
@@ -16,6 +18,7 @@ shell in the CRM.
 
 - [Features](#features)
 - [Screenshots](#screenshots)
+- [CRM user guide](docs/CRM-USER-GUIDE.md)
 - [Project structure](#project-structure)
 - [Requirements](#requirements)
 - [Local setup](#local-setup)
@@ -72,9 +75,18 @@ shell in the CRM.
 | CRM | |
 |---|---|
 | ![Login](docs/screenshots/20-crm-login.png) | ![Admin dashboard](docs/screenshots/21-crm-admin-dashboard.png) |
+| ![Admin dashboard, dark mode](docs/screenshots/21b-crm-admin-dashboard-dark.png) | ![Departments](docs/screenshots/22-crm-admin-departments.png) |
+| ![Workspaces](docs/screenshots/31-crm-workspaces.png) | ![Admin working in the Sales desk](docs/screenshots/32-crm-admin-in-sales-desk.png) |
 | ![Add user](docs/screenshots/23-crm-add-user.png) | ![Leads](docs/screenshots/24-crm-leads.png) |
-| ![Manager dashboard](docs/screenshots/25-crm-manager-dashboard.png) | ![Employee dashboard](docs/screenshots/27-crm-employee-dashboard.png) |
+| ![Sales manager dashboard](docs/screenshots/25-crm-manager-dashboard.png) | ![Team list](docs/screenshots/26-crm-manager-team.png) |
+| ![Assign a task](docs/screenshots/34-crm-assign-task.png) | ![Leave portal](docs/screenshots/36-crm-leave-portal.png) |
+| ![Employee dashboard](docs/screenshots/27-crm-employee-dashboard.png) | ![My profile](docs/screenshots/33-crm-profile.png) |
+| ![Careers and applicants](docs/screenshots/38-crm-careers.png) | ![Add job](docs/screenshots/35-crm-add-job.png) |
 | ![Blog manager](docs/screenshots/29-crm-blog-manager.png) | ![Blog editor](docs/screenshots/30-crm-blog-editor.png) |
+| ![Phone: dashboard](docs/screenshots/37-crm-mobile-dashboard.png) | ![Phone: menu](docs/screenshots/28-crm-mobile-menu.png) |
+
+The CRM screenshots use fictional demo data.
+For a guided tour of every feature, see the **[CRM user guide](docs/CRM-USER-GUIDE.md)**.
 
 All screenshots are in [`docs/screenshots/`](docs/screenshots/).
 
@@ -93,9 +105,10 @@ All screenshots are in [`docs/screenshots/`](docs/screenshots/).
 ├── CRM/
 │   ├── index.html       sign-in page
 │   ├── config/          auth.php (JWT sessions, role checks, CSRF guard), login.php, uploads.php
-│   ├── layout/          shared shell (top.php / bottom.php / layout.css) and shared page bodies
+│   ├── layout/          shared shell (top.php / bottom.php / layout.css), dark/light theme, crm-charts.js
+│   │                    (chart styling), crm-ui.js (dialogs), dashboard_hero.php (KPI tiles), shared page bodies
 │   ├── shared/          endpoints used by several roles (profile, leaves, tasks, users, …)
-│   ├── admin/           admin pages + data/ endpoints
+│   ├── admin/           admin pages + data/ endpoints; workspaces.php opens every department desk
 │   ├── manager/<dept>/  marketing, sales, purchase, HR, website
 │   └── employee/<dept>/ marketing, sales, purchase
 ├── database/
@@ -105,7 +118,7 @@ All screenshots are in [`docs/screenshots/`](docs/screenshots/).
 ├── uploads/             user uploads (scripts can't execute here; résumés are git-ignored)
 ├── vendor/              Composer dependencies (firebase/php-jwt, phpmailer/phpmailer)
 ├── .env.example         every configuration key, documented
-└── docs/                REPORT.md and screenshots
+└── docs/                CRM-USER-GUIDE.md (for staff), REPORT.md and screenshots
 ```
 
 ## Requirements
@@ -236,7 +249,6 @@ New users receive an email with the sign-in link and a random temporary password
 | Task assigned (by a manager or the admin) | the assignee |
 | Leave requested | the employee's department managers; for managers, the admins |
 | Leave approved / rejected | the person who asked for it |
-| **Send test email** button (admin dashboard) | the signed-in admin, to check the SMTP settings |
 
 Notifications are best-effort: if SMTP is down, the task or leave is still saved and the error is logged.
 
@@ -284,6 +296,6 @@ Found a vulnerability? Please email the address on the website's contact page in
 | CRM says "CRM is not configured" | Set `CRM_JWT_SECRET` (32+ chars) in `.env` |
 | New-user email not sent | Check `SMTP_*` in `.env`; the admin sees the SMTP error and the temporary password |
 | A page works locally but breaks on Hostinger with "Failed to open stream" | Linux file names are case-sensitive: the path's letter case must match the folder exactly (e.g. `Analytics/` vs `analytics/`) |
-| Not sure email works | Admin dashboard → **Send test email**; the reply shows the exact SMTP error if it fails |
+| Not sure email works | Add a test user from the Employee List: if sending fails, the admin sees the exact SMTP error |
 | Blank page / 500 | Check the PHP error log in hPanel; temporarily set `APP_DEBUG=1` |
 | Images or PDFs 404 after moving folders | Paths are stored relative to the site root (`uploads/...`); run the migrations |
